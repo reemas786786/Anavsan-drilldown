@@ -22,12 +22,12 @@ export const connectionsData: Account[] = [
 ];
 
 export const cortexModelsData: CortexModel[] = [
-    { id: 'm-1', name: 'llama3-70b', category: 'LLM', tokens: '850K', credits: 1.2, lastUsed: '2 mins ago', requestCount: 12450 },
-    { id: 'm-2', name: 'mistral-large', category: 'LLM', tokens: '1.2M', credits: 1.9, lastUsed: '1 hour ago', requestCount: 18200 },
-    { id: 'm-3', name: 'snowflake-arctic', category: 'LLM', tokens: '4.5M', credits: 4.5, lastUsed: 'Just now', requestCount: 45000 },
-    { id: 'm-4', name: 're-ranker', category: 'Reranking', tokens: '240K', credits: 0.2, lastUsed: '10 mins ago', requestCount: 2150 },
-    { id: 'm-5', name: 'text-embedding-gecko', category: 'Embedding', tokens: '3.1M', credits: 0.8, lastUsed: '4 hours ago', requestCount: 12400 },
-    { id: 'm-6', name: 'jamba-instruct', category: 'LLM', tokens: '150K', credits: 0.4, lastUsed: '1 day ago', requestCount: 1500 },
+    { id: 'm-1', name: 'llama3-70b', inputTokens: '450K', outputTokens: '400K', tokens: '850K', credits: 1.2, insightCount: 5 },
+    { id: 'm-2', name: 'mistral-large', inputTokens: '720K', outputTokens: '480K', tokens: '1.2M', credits: 1.9, insightCount: 2 },
+    { id: 'm-3', name: 'snowflake-arctic', inputTokens: '2.4M', outputTokens: '2.1M', tokens: '4.5M', credits: 4.5, insightCount: 8 },
+    { id: 'm-4', name: 're-ranker', inputTokens: '180K', outputTokens: '60K', tokens: '240K', credits: 0.2, insightCount: 1 },
+    { id: 'm-5', name: 'text-embedding-gecko', inputTokens: '2.8M', outputTokens: '300K', tokens: '3.1M', credits: 0.8, insightCount: 0 },
+    { id: 'm-6', name: 'jamba-instruct', inputTokens: '80K', outputTokens: '70K', tokens: '150K', credits: 0.4, insightCount: 1 },
 ];
 
 export const accountApplicationsData: Application[] = [
@@ -155,7 +155,7 @@ export const storageSummaryData = { totalStorageGB: 45000, totalSpend: 2500 };
 export const recommendationsData: Recommendation[] = (function() {
     const recs: Recommendation[] = [];
     const resourceTypes: ResourceType[] = ['Query', 'Warehouse', 'Storage', 'Database', 'User', 'Application', 'Account'];
-    const accounts = ['Finance Prod', 'Account B', 'Account C', 'Account D', 'Account E'];
+    const accounts = ['Finance Prod', 'Account B', 'Account C', 'Account D', 'Account E', 'Account F', 'Account G', 'Account H'];
     const severities: SeverityImpact[] = ['High', 'Medium', 'Low', 'Cost Saving', 'Performance Boost', 'High Cost'];
     const statuses: RecommendationStatus[] = ['New', 'Read', 'In Progress', 'Resolved', 'Archived'];
     
@@ -181,7 +181,7 @@ export const recommendationsData: Recommendation[] = (function() {
         'Budget Threshold Warning': "Account is projected to exceed allocated budget by 15%."
     };
 
-    for (let i = 1; i <= 110; i++) {
+    for (let i = 1; i <= 150; i++) {
         const type = resourceTypes[i % resourceTypes.length];
         const account = accounts[i % accounts.length];
         const insightList = insightTypes[type];

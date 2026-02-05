@@ -1,8 +1,9 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Account, SQLFile, BigScreenWidget, QueryListItem, PullRequest, User, QueryListFilters, SlowQueryFilters, BreadcrumbItem, Warehouse, AssignedQuery, CortexModel } from '../types';
 import AccountOverviewDashboard from './AccountOverviewDashboard';
 import { SimilarQueryPatternsView } from './QueryPerformanceView';
-import { accountNavItems } from '../constants';
+import { accountNavItems, IconChevronRight } from '../constants';
 import Breadcrumb from '../components/Breadcrumb';
 import { 
     IconChevronDown,
@@ -68,6 +69,13 @@ interface AccountViewProps {
     onNavigateToRecommendations?: (filters: { search?: string; account?: string }) => void;
 }
 
+const KPILabel: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+    <div className="bg-white px-5 py-2.5 rounded-full border border-border-light shadow-sm flex items-center gap-2 flex-shrink-0 transition-all hover:border-primary/30">
+        <span className="text-[12px] text-text-secondary font-bold whitespace-nowrap">{label}:</span>
+        <span className="text-[13px] font-black text-text-strong whitespace-nowrap">{value}</span>
+    </div>
+);
+
 const MobileNav: React.FC<{
     activePage: string;
     onPageChange: (page: string) => void;
@@ -124,21 +132,66 @@ const MobileNav: React.FC<{
     );
 };
 
-const CortexListView: React.FC = () => {
+const CortexListView: React.FC<{
+    onNavigateToRecommendations?: (filters: { search?: string; account?: string }) => void;
+}> = ({ onNavigateToRecommendations }) => {
     const [search, setSearch] = useState('');
     
     const filteredModels = useMemo(() => {
         return cortexModelsData.filter(m => 
-            m.name.toLowerCase().includes(search.toLowerCase()) || 
-            m.category.toLowerCase().includes(search.toLowerCase())
+            m.name.toLowerCase().includes(search.toLowerCase())
         );
     }, [search]);
+
+    const globalMetrics = useMemo(() => {
+        // Parse token strings like "450K" or "1.2M" into numbers for aggregation
+        const parseTokens = (t: string): number => {
+            const val = parseFloat(t.replace(/[KM]/g, ''));
+            if (t.includes('M')) return val * 1000000;
+            if (t.includes('K')) return val * 1000;
+            return val;
+        };
+
+        const formatTokens = (n: number): string => {
+            if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+            return n.toString();
+        };
+
+        const totals = filteredModels.reduce((acc, m) => {
+            acc.input += parseTokens(m.inputTokens);
+            acc.output += parseTokens(m.outputTokens);
+            acc.total += parseTokens(m.tokens);
+            acc.credits += m.credits;
+            acc.insights += m.insightCount;
+            return acc;
+        }, { input: 0, output: 0, total: 0, credits: 0, insights: 0 });
+
+        return {
+            ...totals,
+            input: formatTokens(totals.input),
+            output: formatTokens(totals.output),
+            total: formatTokens(totals.total),
+            credits: totals.credits.toFixed(1) + 'K',
+            insights: totals.insights.toString(),
+            modelCount: filteredModels.length.toString()
+        };
+    }, [filteredModels]);
 
     return (
         <div className="flex flex-col h-full bg-background px-6 pt-4 pb-12 space-y-4">
             <div className="flex-shrink-0 mb-8">
                 <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Cortex Models</h1>
                 <p className="text-sm text-text-secondary font-medium mt-1">Manage and monitor Snowflake Cortex AI models active in this account.</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 overflow-x-auto no-scrollbar pb-1 flex-shrink-0">
+                <KPILabel label="Models" value={globalMetrics.modelCount} />
+                <KPILabel label="Total tokens" value={globalMetrics.total} />
+                <KPILabel label="Input tokens" value={globalMetrics.input} />
+                <KPILabel label="Output tokens" value={globalMetrics.output} />
+                <KPILabel label="Total credits" value={globalMetrics.credits} />
+                <KPILabel label="Insights" value={globalMetrics.insights} />
             </div>
 
             <div className="bg-white rounded-2xl flex flex-col flex-grow min-h-0 shadow-sm border border-border-light overflow-hidden">
@@ -160,11 +213,11 @@ const CortexListView: React.FC = () => {
                         <thead className="bg-[#F8F9FA] sticky top-0 z-10">
                             <tr>
                                 <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Model Name</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Category</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Input Tokens</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Output Tokens</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Token Usage</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Credits</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Requests</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-right uppercase tracking-widest">Last Used</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-right uppercase tracking-widest">Insights</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-border-light">
@@ -179,18 +232,22 @@ const CortexListView: React.FC = () => {
                                                 <span className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">{model.name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <span className="px-2 py-1 bg-surface-nested rounded-full text-[10px] font-bold text-text-secondary border border-border-color uppercase tracking-tighter">
-                                                {model.category}
-                                            </span>
-                                        </td>
+                                        <td className="px-6 py-5 font-medium text-text-secondary">{model.inputTokens}</td>
+                                        <td className="px-6 py-5 font-medium text-text-secondary">{model.outputTokens}</td>
                                         <td className="px-6 py-5 font-medium text-text-primary">{model.tokens}</td>
                                         <td className="px-6 py-5 font-black text-text-strong">{model.credits}K</td>
-                                        <td className="px-6 py-5 font-medium text-text-secondary">{model.requestCount.toLocaleString()}</td>
-                                        <td className="px-6 py-5 text-right whitespace-nowrap">
-                                            <div className="flex items-center justify-end gap-1.5 text-text-muted font-medium">
-                                                <IconClock className="w-3.5 h-3.5" />
-                                                {model.lastUsed}
+                                        <td className="px-6 py-5 text-right">
+                                            <div className="flex items-center justify-end gap-3">
+                                                <div className="inline-flex items-center gap-1.5 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
+                                                    <span className="text-xs font-black text-primary">{model.insightCount}</span>
+                                                    <span className="text-[9px] font-bold text-text-secondary uppercase">Insights</span>
+                                                </div>
+                                                <button 
+                                                    onClick={() => onNavigateToRecommendations?.({ search: model.name })}
+                                                    className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all"
+                                                >
+                                                    <IconChevronRight className="w-5 h-5" />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -341,15 +398,15 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
                     onShareQueryClick={onShareQueryClick} 
                     onSelectQuery={setSelectedQuery} 
                     onAnalyzeQuery={(q) => onAnalyzeQuery(q, 'All queries')}
-                    onOptimizeQuery={(q) => onAnalyzeQuery(q, 'All queries')}
-                    onSimulateQuery={(q) => onAnalyzeQuery(q, 'All queries')}
+                    onOptimizeQuery={(q) => onOptimizeQuery(q, 'All queries')}
+                    onSimulateQuery={(q) => onSimulateQuery(q, 'All queries')}
                     filters={allQueriesFilters}
                     setFilters={setAllQueriesFilters}
                  />;
             case 'Slow queries':
                 return <SlowQueriesView 
                     onAnalyzeQuery={(q) => onAnalyzeQuery(q, 'Slow queries')}
-                    onOptimizeQuery={(q) => onAnalyzeQuery(q, 'Slow queries')}
+                    onOptimizeQuery={(q) => onOptimizeQuery(q, 'Slow queries')}
                     onSimulateQuery={(q) => onAnalyzeQuery(q, 'Slow queries')}
                     onPreviewQuery={onPreviewQuery}
                     filters={slowQueriesFilters}
@@ -360,7 +417,7 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
             case 'Databases':
                 return <DatabasesView selectedDatabaseId={selectedDatabaseId} onSelectDatabase={setSelectedDatabaseId} onBackToList={handleBackToDbList} />;
             case 'Cortex list':
-                return <CortexListView />;
+                return <CortexListView onNavigateToRecommendations={onNavigateToRecommendations} />;
             default:
                 return <div className="px-6 pt-4 pb-12"><h1 className="text-xl font-bold">{activePage}</h1><p>Content for this page is under construction.</p></div>;
         }

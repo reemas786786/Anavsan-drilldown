@@ -10,7 +10,7 @@ import {
     spendTrendsData,
 } from '../data/dummyData';
 import { Account, User, BigScreenWidget, Page } from '../types';
-import { IconDotsVertical, IconChevronDown, IconAdd, IconList, IconInfo } from '../constants';
+import { IconDotsVertical, IconChevronDown, IconAdd, IconList, IconInfo, IconSearch } from '../constants';
 import InfoTooltip from '../components/InfoTooltip';
 
 interface OverviewProps {
@@ -137,12 +137,17 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const CreditsTrendWidget: React.FC = () => {
     const [selectedRange, setSelectedRange] = useState(DATE_RANGES[1]);
+    const [selectedAccount, setSelectedAccount] = useState('All accounts');
     const [isRangeOpen, setIsRangeOpen] = useState(false);
+    const [isAccountOpen, setIsAccountOpen] = useState(false);
+    
     const rangeRef = useRef<HTMLDivElement>(null);
+    const accountRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (rangeRef.current && !rangeRef.current.contains(event.target as Node)) setIsRangeOpen(false);
+            if (accountRef.current && !accountRef.current.contains(event.target as Node)) setIsAccountOpen(false);
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -152,25 +157,60 @@ const CreditsTrendWidget: React.FC = () => {
         return spendTrendsData.slice(-selectedRange.value);
     }, [selectedRange]);
 
+    const accountOptions = ['All accounts', ...connectionsData.map(a => a.name)];
+
     return (
         <WidgetCard 
             title="Credits Trend" 
             headerActions={
-                <div className="relative" ref={rangeRef}>
-                    <button 
-                        onClick={() => setIsRangeOpen(!isRangeOpen)}
-                        className="flex items-center gap-2 px-3 py-1 bg-background rounded-lg text-[11px] text-text-primary font-bold border border-border-color shadow-sm"
-                    >
-                        {selectedRange.label}
-                        <IconChevronDown className={`w-3 h-3 text-text-muted transition-transform ${isRangeOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isRangeOpen && (
-                        <div className="absolute right-0 mt-1 w-32 bg-surface rounded-lg shadow-xl z-50 border border-border-color overflow-hidden py-1">
-                            {DATE_RANGES.map(r => (
-                                <button key={r.label} onClick={() => { setSelectedRange(r); setIsRangeOpen(false); }} className="w-full text-left px-3 py-1.5 text-[11px] font-medium hover:bg-primary/5 transition-colors">{r.label}</button>
-                            ))}
-                        </div>
-                    )}
+                <div className="flex items-center gap-3">
+                    {/* Account Selector */}
+                    <div className="relative" ref={accountRef}>
+                        <button 
+                            onClick={() => setIsAccountOpen(!isAccountOpen)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-lg text-[11px] text-text-primary font-bold border border-border-color shadow-sm min-w-[120px] justify-between"
+                        >
+                            <span className="truncate max-w-[100px]">{selectedAccount}</span>
+                            <IconChevronDown className={`w-3 h-3 text-text-muted transition-transform flex-shrink-0 ${isAccountOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isAccountOpen && (
+                            <div className="absolute right-0 mt-1 w-48 bg-surface rounded-lg shadow-xl z-50 border border-border-color overflow-hidden py-1 max-h-60 overflow-y-auto">
+                                {accountOptions.map(acc => (
+                                    <button 
+                                        key={acc} 
+                                        onClick={() => { setSelectedAccount(acc); setIsAccountOpen(false); }} 
+                                        className={`w-full text-left px-3 py-2 text-[11px] font-medium hover:bg-primary/5 transition-colors ${selectedAccount === acc ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}`}
+                                    >
+                                        {acc}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Time Range Selector */}
+                    <div className="relative" ref={rangeRef}>
+                        <button 
+                            onClick={() => setIsRangeOpen(!isRangeOpen)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-lg text-[11px] text-text-primary font-bold border border-border-color shadow-sm min-w-[100px] justify-between"
+                        >
+                            {selectedRange.label}
+                            <IconChevronDown className={`w-3 h-3 text-text-muted transition-transform flex-shrink-0 ${isRangeOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isRangeOpen && (
+                            <div className="absolute right-0 mt-1 w-32 bg-surface rounded-lg shadow-xl z-50 border border-border-color overflow-hidden py-1">
+                                {DATE_RANGES.map(r => (
+                                    <button 
+                                        key={r.label} 
+                                        onClick={() => { setSelectedRange(r); setIsRangeOpen(false); }} 
+                                        className={`w-full text-left px-3 py-2 text-[11px] font-medium hover:bg-primary/5 transition-colors ${selectedRange.value === r.value ? 'bg-primary/10 text-primary font-bold' : 'text-text-primary'}`}
+                                    >
+                                        {r.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             }
         >

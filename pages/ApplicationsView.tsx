@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Application, QueryListItem, Recommendation } from '../types';
 import { accountApplicationsData, queryListData, recommendationsData, warehousesData } from '../data/dummyData';
@@ -342,7 +343,6 @@ const ApplicationsListView: React.FC<{ onSelect: (app: Application) => void }> =
                         <thead className="bg-[#F8F9FA] sticky top-0 z-10">
                             <tr>
                                 <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light">Application name</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light">Total credits</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light">Compute (cr)</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light">Storage (cr)</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-right">Insights</th>
@@ -357,7 +357,6 @@ const ApplicationsListView: React.FC<{ onSelect: (app: Application) => void }> =
                                             <span className="text-[10px] text-text-muted font-normal mt-0.5 truncate max-w-xs">{app.description}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5 font-black text-text-strong">{app.totalCredits.toLocaleString()}</td>
                                     <td className="px-6 py-5 font-medium text-text-primary">{app.warehouseCredits.toLocaleString()}</td>
                                     <td className="px-6 py-5 font-medium text-text-primary">{app.storageCredits.toLocaleString()}</td>
                                     <td className="px-6 py-5 text-right">

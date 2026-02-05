@@ -81,11 +81,11 @@ export interface Application {
 export interface CortexModel {
     id: string;
     name: string;
-    category: string;
-    tokens: string;
+    inputTokens: string;
+    outputTokens: string;
+    tokens: string; // This represents Total Tokens
     credits: number;
-    lastUsed: string;
-    requestCount: number;
+    insightCount: number;
 }
 
 export type WidgetType = 'StatCard' | 'LineChart' | 'BarChart' | 'Table' | 'DonutChart';
@@ -286,6 +286,14 @@ export interface StorageOptimizationOpportunity {
     tableName: string;
     recommendation: string;
     potentialSavings: number; 
+}
+
+export interface StorageActivityLogItem {
+    id: string;
+    timestamp: string;
+    user: string;
+    action: string;
+    details: string;
 }
 
 export interface StorageActivityLogItem {
