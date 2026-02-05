@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
 import { 
     usageCreditsData, 
     resourceSnapshotData, 
     finopsRecommendations, 
     connectionsData, 
     warehousesData, 
-    topQueriesForDashboard,
+    spendTrendsData,
 } from '../data/dummyData';
 import { Account, User, BigScreenWidget, Page } from '../types';
 import { IconDotsVertical, IconChevronDown, IconAdd, IconList, IconInfo } from '../constants';
@@ -32,10 +32,10 @@ const WidgetCard: React.FC<{
     headerActions?: React.ReactNode,
     onTableView?: () => void
 }> = ({ children, title, hasMenu = true, infoText, headerActions, onTableView }) => (
-    <div className="bg-surface p-5 rounded-[12px] shadow-sm h-full flex flex-col border border-border-light">
+    <div className="bg-surface p-6 rounded-[24px] shadow-sm flex flex-col border border-border-light">
         <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-1.5">
-                <h4 className="text-[13px] font-bold text-text-strong tracking-tight">{title}</h4>
+                <h4 className="text-[14px] font-bold text-text-strong tracking-tight uppercase tracking-[0.05em]">{title}</h4>
                 {infoText && <InfoTooltip text={infoText} />}
             </div>
             <div className="flex items-center gap-2">
@@ -70,12 +70,12 @@ const SummaryMetricCard: React.FC<{
 }> = ({ label, value, subValue, onClick }) => (
     <button 
         onClick={onClick}
-        className="bg-surface-nested p-4 rounded-[20px] border border-border-light flex flex-col justify-between h-[84px] flex-1 min-w-[140px] text-left hover:border-primary/30 transition-all group"
+        className="bg-surface-nested p-4 rounded-[16px] border border-border-light flex flex-col h-[90px] text-left hover:border-primary/40 hover:bg-surface-hover transition-all group shadow-sm w-full"
     >
-        <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider group-hover:text-primary transition-colors">{label}</p>
-        <div>
-            <p className="text-xl font-black text-text-strong tracking-tight leading-none">{value}</p>
-            {subValue && <p className="text-[10px] font-bold text-text-secondary mt-1">{subValue}</p>}
+        <p className="text-[10px] font-bold text-[#9A9AB2] uppercase tracking-widest group-hover:text-primary transition-colors">{label}</p>
+        <div className="mt-auto">
+            <p className="text-[18px] font-black text-[#161616] tracking-tight leading-none">{value}</p>
+            {subValue && <p className="text-[10px] font-bold text-[#5A5A72] mt-1 uppercase tracking-tight">{subValue}</p>}
         </div>
     </button>
 );
@@ -122,21 +122,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-const WavyGridBackground = () => (
-    <div className="absolute bottom-0 left-0 right-0 h-[400px] pointer-events-none opacity-20 z-0 overflow-hidden">
-        <svg width="100%" height="100%" viewBox="0 0 1440 400" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 200C240 100 480 300 720 200C960 100 1200 300 1440 200V400H0V200Z" fill="none" stroke="url(#gridGradient)" strokeWidth="0.5" />
-            <defs>
-                <linearGradient id="gridGradient" x1="720" y1="0" x2="720" y2="400" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#6932D5" stopOpacity="0.5" />
-                    <stop offset="1" stopColor="#6932D5" stopOpacity="0" />
-                </linearGradient>
-            </defs>
-        </svg>
-    </div>
-);
-
-const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAccountClick, onNavigate }) => {
+const CreditsTrendWidget: React.FC = () => {
     const [selectedRange, setSelectedRange] = useState(DATE_RANGES[1]);
     const [isRangeOpen, setIsRangeOpen] = useState(false);
     const rangeRef = useRef<HTMLDivElement>(null);
@@ -149,8 +135,69 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const trendData = useMemo(() => {
+        return spendTrendsData.slice(-selectedRange.value);
+    }, [selectedRange]);
+
+    return (
+        <WidgetCard 
+            title="Credits Trend" 
+            headerActions={
+                <div className="relative" ref={rangeRef}>
+                    <button 
+                        onClick={() => setIsRangeOpen(!isRangeOpen)}
+                        className="flex items-center gap-2 px-3 py-1 bg-background rounded-lg text-[11px] text-text-primary font-bold border border-border-color shadow-sm"
+                    >
+                        {selectedRange.label}
+                        <IconChevronDown className={`w-3 h-3 text-text-muted transition-transform ${isRangeOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isRangeOpen && (
+                        <div className="absolute right-0 mt-1 w-32 bg-surface rounded-lg shadow-xl z-50 border border-border-color overflow-hidden py-1">
+                            {DATE_RANGES.map(r => (
+                                <button key={r.label} onClick={() => { setSelectedRange(r); setIsRangeOpen(false); }} className="w-full text-left px-3 py-1.5 text-[11px] font-medium hover:bg-primary/5 transition-colors">{r.label}</button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            }
+        >
+            <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trendData}>
+                        <defs>
+                            <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#6932D5" stopOpacity={0.2}/>
+                                <stop offset="95%" stopColor="#6932D5" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2DDEB" opacity={0.5} />
+                        <XAxis dataKey="date" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9A9AB2', fontWeight: 700}} />
+                        <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9A9AB2', fontWeight: 700}} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Area type="monotone" dataKey="total" stroke="#6932D5" strokeWidth={3} fillOpacity={1} fill="url(#colorTrend)" />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </WidgetCard>
+    );
+};
+
+const WavyGridBackground = () => (
+    <div className="absolute bottom-0 left-0 right-0 h-[400px] pointer-events-none opacity-20 z-0 overflow-hidden">
+        <svg width="100%" height="100%" viewBox="0 0 1440 400" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 200C240 100 480 300 720 200C960 100 1200 300 1440 200V400H0V200Z" fill="none" stroke="url(#gridGradient)" strokeWidth="0.5" />
+            <defs>
+                <linearGradient id="gridGradient" x1="720" y1="0" x2="720" y2="400" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#6932D5" stopOpacity={0.5} />
+                    <stop offset="1" stopColor="#6932D5" stopOpacity="0" />
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
+);
+
+const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAccountClick, onNavigate }) => {
     const topAccountsData = useMemo(() => connectionsData.map(acc => ({ name: acc.name, credits: acc.tokens / 1000 })), []);
-    const topWarehousesData = useMemo(() => warehousesData.map(wh => ({ name: wh.name, credits: wh.tokens })), []);
 
     if (accounts.length === 0) {
         return (
@@ -184,46 +231,29 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
     }
 
     return (
-        <div className="space-y-5 px-6 pb-12 pt-4 max-w-[1440px] mx-auto">
-            <div className="flex justify-between items-end mb-8">
+        <div className="space-y-8 px-6 pb-20 pt-4 max-w-[1440px] mx-auto">
+            <div className="flex justify-between items-end mb-4">
                 <div>
                     <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Data cloud overview</h1>
-                    <p className="text-sm text-text-secondary font-medium mt-1">Dec 2 to Dec 16 2025 (Last 14 days)</p>
-                </div>
-                <div className="relative" ref={rangeRef}>
-                    <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-text-secondary">Data range</span>
-                        <button 
-                            onClick={() => setIsRangeOpen(!isRangeOpen)}
-                            className="flex items-center gap-2 px-4 py-2 bg-surface rounded-lg text-sm text-text-primary font-bold border border-border-color shadow-sm"
-                        >
-                            {selectedRange.label}
-                            <IconChevronDown className={`w-4 h-4 text-text-muted transition-transform ${isRangeOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                    </div>
-                    {isRangeOpen && (
-                        <div className="absolute right-0 mt-1 w-48 bg-surface rounded-xl shadow-2xl z-50 border border-border-color overflow-hidden py-1">
-                            {DATE_RANGES.map(r => (
-                                <button key={r.label} onClick={() => { setSelectedRange(r); setIsRangeOpen(false); }} className="w-full text-left px-4 py-2 text-sm font-medium hover:bg-primary/5 transition-colors">{r.label}</button>
-                            ))}
-                        </div>
-                    )}
+                    <p className="text-sm text-text-secondary font-medium mt-1">Snapshot of your organization's Snowflake consumption.</p>
                 </div>
             </div>
 
-            {/* Unified Resource Summary Widget */}
-            <div className="bg-white rounded-[32px] border border-border-light shadow-sm p-5 flex flex-col gap-5">
-                <div className="flex justify-between items-center px-2">
-                    <div className="flex items-center gap-1.5">
-                        <h2 className="text-sm font-black text-text-strong tracking-tight uppercase">Resource summary</h2>
-                        <IconInfo className="w-4 h-4 text-text-muted" />
+            {/* Single Column Widget Stack */}
+            <div className="space-y-8">
+                {/* 1. Resource Summary */}
+                <div className="bg-white rounded-[24px] border border-border-light shadow-sm p-6 flex flex-col gap-6">
+                    <div className="flex justify-between items-center px-1">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-[14px] font-semibold text-text-primary tracking-tight uppercase tracking-[0.05em]">Resource summary</h2>
+                            <IconInfo className="w-4 h-4 text-[#9A9AB2]" />
+                        </div>
+                        <button className="p-1 rounded-full hover:bg-surface-nested transition-colors text-[#9A9AB2]">
+                            <IconDotsVertical className="w-5 h-5" />
+                        </button>
                     </div>
-                    <IconDotsVertical className="w-5 h-5 text-text-muted" />
-                </div>
-                
-                <div className="space-y-3">
-                    {/* Row 1: Accounts, Applications, Compute, Storage, Cortex, Cloud Service */}
-                    <div className="flex flex-wrap gap-3">
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         <SummaryMetricCard 
                             label="Accounts" 
                             value="8" 
@@ -237,16 +267,16 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                             onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Applications' })} 
                         />
                         <SummaryMetricCard 
-                            label="Compute" 
-                            value="36" 
-                            subValue="44.25K Credits" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Compute' })} 
-                        />
-                        <SummaryMetricCard 
                             label="Storage" 
                             value="36 TB" 
                             subValue="1.5K Credits" 
                             onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Storage' })} 
+                        />
+                        <SummaryMetricCard 
+                            label="Compute" 
+                            value="44.25K" 
+                            subValue="Credits"
+                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Compute' })} 
                         />
                         <SummaryMetricCard 
                             label="Cortex" 
@@ -255,16 +285,7 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                             onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Cortex' })} 
                         />
                         <SummaryMetricCard 
-                            label="Cloud service" 
-                            value="1.5K" 
-                            subValue="Credits" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Cloud Service' })} 
-                        />
-                    </div>
-                    {/* Row 2: User, Queries, Table - Aligned with the left as shown in image */}
-                    <div className="flex flex-wrap gap-3">
-                        <SummaryMetricCard 
-                            label="User" 
+                            label="Users" 
                             value="43" 
                             onClick={() => onNavigate('Resource Summary', undefined, { tab: 'User' })} 
                         />
@@ -273,33 +294,28 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                             value="950" 
                             onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Queries' })} 
                         />
-                        <SummaryMetricCard 
-                            label="Tables" 
-                            value="865" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Table' })} 
-                        />
-                        <div className="flex-1 min-w-[140px] hidden lg:block"></div>
-                        <div className="flex-1 min-w-[140px] hidden lg:block"></div>
-                        <div className="flex-1 min-w-[140px] hidden lg:block"></div>
                     </div>
                 </div>
-            </div>
 
-            <WidgetCard 
-                title="Recommendations" 
-                headerActions={<button onClick={() => onNavigate('Recommendations')} className="text-[11px] font-bold text-link hover:underline">View all</button>}
-            >
-                <div className="space-y-3">
-                    {finopsRecommendations.map(rec => <RecommendationItem key={rec.id} rec={rec} />)}
-                </div>
-            </WidgetCard>
+                {/* 2. Recommendations */}
+                <WidgetCard 
+                    title="Recommendations" 
+                    headerActions={<button onClick={() => onNavigate('Recommendations')} className="text-[11px] font-bold text-link hover:underline">View all</button>}
+                >
+                    <div className="space-y-4">
+                        {finopsRecommendations.map(rec => <RecommendationItem key={rec.id} rec={rec} />)}
+                    </div>
+                </WidgetCard>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <WidgetCard title="Top accounts by credits" headerActions={<button onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Accounts' })} className="text-[11px] font-bold text-link hover:underline">View all</button>}>
+                {/* 3. Top accounts by credits */}
+                <WidgetCard 
+                    title="Top accounts by credits" 
+                    headerActions={<button onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Accounts' })} className="text-[11px] font-bold text-link hover:underline">View all</button>}
+                >
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={topAccountsData} margin={{ left: 50, right: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" border-border-color horizontal={false} stroke="#E2DDEB" opacity={0.5} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2DDEB" opacity={0.5} />
                                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#9A9AB2' }} />
                                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#5A5A72' }} width={80} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
@@ -308,20 +324,9 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                         </ResponsiveContainer>
                     </div>
                 </WidgetCard>
-                
-                <WidgetCard title="Top warehouse by credits" headerActions={<button onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Compute' })} className="text-[11px] font-bold text-link hover:underline">View all</button>}>
-                    <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={topWarehousesData} margin={{ left: 50, right: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2DDEB" opacity={0.5} />
-                                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#9A9AB2' }} />
-                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#5A5A72' }} width={80} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="credits" fill="#6932D5" radius={[0, 4, 4, 0]} barSize={8} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </WidgetCard>
+
+                {/* 4. Credits Trend */}
+                <CreditsTrendWidget />
             </div>
         </div>
     );

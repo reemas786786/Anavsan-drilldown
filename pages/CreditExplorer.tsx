@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
     AreaChart, Area, PieChart, Pie, Cell, CartesianGrid 
@@ -26,8 +26,9 @@ import {
     IconArrowUp,
     IconArrowDown
 } from '../constants';
+import Pagination from '../components/Pagination';
 
-type ResourceCategory = 'Accounts' | 'Applications' | 'Compute' | 'Storage' | 'Cortex' | 'Cloud Service' | 'User' | 'Queries' | 'Table';
+type ResourceCategory = 'Accounts' | 'Applications' | 'Compute' | 'Storage' | 'Cortex' | 'User' | 'Queries';
 
 const categories: { id: ResourceCategory; label: string }[] = [
     { id: 'Accounts', label: 'Accounts' },
@@ -35,32 +36,23 @@ const categories: { id: ResourceCategory; label: string }[] = [
     { id: 'Compute', label: 'Compute' },
     { id: 'Storage', label: 'Storage' },
     { id: 'Cortex', label: 'Cortex' },
-    { id: 'Cloud Service', label: 'Cloud services' },
     { id: 'User', label: 'Users' },
-    { id: 'Queries', label: 'Queries' },
-    { id: 'Table', label: 'Tables' }
+    { id: 'Queries', label: 'Queries' }
 ];
 
 const applicationsData = [
     { id: 'app-1', name: 'Production ETL', accountName: 'Finance Prod', totalCredits: 15420, warehouseCredits: 14210, storageCredits: 840, otherCredits: 370 },
-    { id: 'app-2', name: 'Tableau BI Dashboards', accountName: 'Marketing Dev', totalCredits: 8215, warehouseCredits: 7850, storageCredits: 210, otherCredits: 155 },
+    { id: 'app-2', name: 'Tableau BI Dashboards', accountName: 'Account B', totalCredits: 8215, warehouseCredits: 7850, storageCredits: 210, otherCredits: 155 },
     { id: 'app-3', name: 'Log Ingestion Service', accountName: 'Finance Prod', totalCredits: 21040, warehouseCredits: 18520, storageCredits: 1560, otherCredits: 960 },
-    { id: 'app-4', name: 'SageMaker ML Model', accountName: 'Data Sci Lab', totalCredits: 4510, warehouseCredits: 4200, storageCredits: 120, otherCredits: 190 },
-    { id: 'app-5', name: 'Inventory Sync Job', accountName: 'Marketing Dev', totalCredits: 1280, warehouseCredits: 1150, storageCredits: 80, otherCredits: 50 },
-];
-
-const cloudServiceData = [
-    { id: 'cs-1', name: 'Finance Prod', totalCredits: 12450, computeCredits: 124000, ratio: '10.0%', billedCredits: 0, savings: 1245 },
-    { id: 'cs-2', name: 'Marketing Dev', totalCredits: 4520, computeCredits: 21000, ratio: '21.5%', billedCredits: 2420, savings: 0 },
-    { id: 'cs-3', name: 'Data Sci Lab', totalCredits: 8810, computeCredits: 85000, ratio: '10.3%', billedCredits: 310, savings: 520 },
-    { id: 'cs-4', name: 'Sales BI', totalCredits: 1240, computeCredits: 45000, ratio: '2.7%', billedCredits: 0, savings: 3260 },
+    { id: 'app-4', name: 'SageMaker ML Model', accountName: 'Account C', totalCredits: 4510, warehouseCredits: 4200, storageCredits: 120, otherCredits: 190 },
+    { id: 'app-5', name: 'Inventory Sync Job', accountName: 'Account B', totalCredits: 1280, warehouseCredits: 1150, storageCredits: 80, otherCredits: 50 },
 ];
 
 const cortexData = [
     { id: 'cx-1', name: 'Finance Prod', model: 'llama3-70b', tokens: '850K', credits: 1240, lastUsed: '2 mins ago' },
     { id: 'cx-2', name: 'Finance Prod', model: 'mistral-large', tokens: '1.2M', credits: 1850, lastUsed: '1 hour ago' },
-    { id: 'cx-3', name: 'Data Sci Lab', model: 'snowflake-arctic', tokens: '4.5M', credits: 4500, lastUsed: 'Just now' },
-    { id: 'cx-4', name: 'Marketing Dev', model: 're-ranker', tokens: '240K', credits: 215, lastUsed: '10 mins ago' },
+    { id: 'cx-3', name: 'Account C', model: 'snowflake-arctic', tokens: '4.5M', credits: 4500, lastUsed: 'Just now' },
+    { id: 'cx-4', name: 'Account B', model: 're-ranker', tokens: '240K', credits: 215, lastUsed: '10 mins ago' },
 ];
 
 /**
@@ -72,7 +64,7 @@ const formatK = (val: any): string => {
         if (val >= 1000) {
             return (val / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
         }
-        return val + 'K';
+        return val.toString();
     }
     return String(val);
 };
@@ -80,7 +72,7 @@ const formatK = (val: any): string => {
 interface ResourceSummaryProps {
     initialTab?: string;
     onNavigateToRecommendations?: (filters: { search?: string; account?: string }) => void;
-    onSelectAccount?: (account: Account) => void;
+    onSelectAccount?: (account: Account, subPage?: string) => void;
     onSelectApplication?: (applicationName: string) => void;
 }
 
@@ -112,33 +104,19 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
 
     const [activeCategory, setActiveCategory] = useState<ResourceCategory>(normalizedInitialTab);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedAccount, setSelectedAccount] = useState('All');
-    const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
-    const accountMenuRef = useRef<HTMLDivElement>(null);
-
-    const accountOptions = useMemo(() => ['All', ...connectionsData.map(a => a.name)], []);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         setActiveCategory(normalizedInitialTab);
     }, [normalizedInitialTab]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
-                setIsAccountMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     const getInsightCount = (name: string) => {
-        // Strictly filter recommendations by resource name to ensure badge matches results screen
-        return recommendationsData.filter(r => r.affectedResource.toLowerCase() === name.toLowerCase()).length;
+        return recommendationsData.filter(r => r.affectedResource.toLowerCase().includes(name.toLowerCase())).length;
     };
 
-    const tableContent = useMemo(() => {
+    const tableData = useMemo(() => {
         const prepareData = (): any[] => {
             switch (activeCategory) {
                 case 'Accounts':
@@ -156,63 +134,79 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         cloud: formatK(2.4),
                         insights: getInsightCount(acc.name)
                     }));
+                case 'Applications':
+                    const groupedApps = applicationsData.reduce((acc: any, app) => {
+                        if (!acc[app.accountName]) {
+                            acc[app.accountName] = { 
+                                name: app.accountName, 
+                                appCount: 0, 
+                                totalRaw: 0,
+                                insights: 0
+                            };
+                        }
+                        acc[app.accountName].appCount += 1;
+                        acc[app.accountName].totalRaw += app.totalCredits;
+                        acc[app.accountName].insights += getInsightCount(app.accountName);
+                        return acc;
+                    }, {});
+                    return Object.values(groupedApps).map((item: any) => {
+                        const conn = connectionsData.find(a => a.name === item.name);
+                        return {
+                            ...item,
+                            id: conn?.id || item.name,
+                            subName: conn?.identifier || '',
+                            appCountRaw: item.appCount,
+                            appCount: item.appCount.toString(),
+                            total: formatK(item.totalRaw),
+                            insights: item.insights
+                        };
+                    });
                 case 'Compute':
                     return connectionsData.map((acc, idx) => {
                         const mockCredits = [4900, 4250, 3400, 2400, 1900, 1600, 1200, 800];
                         const baseVal = idx % 2 === 0 ? 56 : 26;
+                        const computeCredits = mockCredits[idx % mockCredits.length];
+                        const totalCompute = (baseVal * 6) + computeCredits + 12;
                         return {
                             id: acc.id,
                             name: acc.name,
                             subName: acc.identifier,
+                            totalRaw: totalCompute,
+                            total: formatK(totalCompute),
                             aiRaw: baseVal,
                             autoRaw: baseVal,
                             serverlessRaw: baseVal,
                             ingestRaw: baseVal,
-                            computeRaw: mockCredits[idx % mockCredits.length],
+                            computeRaw: computeCredits,
                             searchRaw: baseVal,
+                            accelerateRaw: 12,
                             ai: formatK(baseVal),
                             auto: formatK(baseVal),
                             serverless: formatK(baseVal),
                             ingest: formatK(baseVal),
-                            compute: formatK(mockCredits[idx % mockCredits.length]),
+                            compute: formatK(computeCredits),
                             search: formatK(baseVal),
+                            accelerate: formatK(12),
                             insights: getInsightCount(acc.name)
                         };
                     });
                 case 'Storage':
-                    return connectionsData.map(acc => ({
-                        id: acc.id,
-                        name: acc.name,
-                        subName: acc.identifier,
-                        totalRaw: Math.round(acc.tokens * 0.15),
-                        activeRaw: 56,
-                        stagedRaw: 12,
-                        failsafeRaw: 8,
-                        hybridRaw: 4,
-                        timetravelRaw: 14,
-                        total: formatK(Math.round(acc.tokens * 0.15)),
-                        active: formatK(56),
-                        staged: formatK(12),
-                        failsafe: formatK(8),
-                        hybrid: formatK(4),
-                        timetravel: formatK(14),
-                        insights: getInsightCount(acc.name)
-                    }));
-                case 'Cloud Service':
-                    return cloudServiceData.map(cs => ({
-                        id: cs.id,
-                        name: cs.name,
-                        subName: 'Metadata/DDL usage',
-                        totalRaw: cs.totalCredits,
-                        computeRaw: cs.computeCredits,
-                        ratioRaw: parseFloat(cs.ratio),
-                        billedRaw: cs.billedCredits,
-                        total: formatK(cs.totalCredits),
-                        compute: formatK(cs.computeCredits),
-                        ratio: cs.ratio,
-                        billed: formatK(cs.billedCredits),
-                        insights: getInsightCount(cs.name)
-                    }));
+                    return connectionsData.map(acc => {
+                        const storageCredits = Math.round(acc.tokens * 0.12);
+                        const unusedGB = Math.round(acc.storageGB * (0.05 + Math.random() * 0.15));
+                        return {
+                            id: acc.id,
+                            name: acc.name,
+                            subName: acc.identifier,
+                            totalRaw: storageCredits,
+                            total: formatK(storageCredits),
+                            sizeRaw: acc.storageGB,
+                            size: acc.storageGB >= 1000 ? `${(acc.storageGB / 1000).toFixed(1)} TB` : `${acc.storageGB} GB`,
+                            unusedRaw: unusedGB,
+                            unused: unusedGB >= 1000 ? `${(unusedGB / 1000).toFixed(1)} TB` : `${unusedGB} GB`,
+                            insights: getInsightCount(acc.name)
+                        };
+                    });
                 case 'Cortex':
                     return cortexData.map(cx => ({
                         id: cx.id,
@@ -224,58 +218,33 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         insights: getInsightCount(cx.name)
                     }));
                 case 'User':
-                    return usersData.map(u => ({
-                        id: u.id,
-                        name: u.name,
-                        subName: u.email,
-                        role: u.role,
-                        totalRaw: u.tokens,
-                        total: formatK(u.tokens),
-                        insights: getInsightCount(u.name)
+                    return connectionsData.map(acc => ({
+                        id: acc.id,
+                        name: acc.name,
+                        subName: acc.identifier,
+                        userCountRaw: acc.usersCount,
+                        userCount: acc.usersCount.toString(),
+                        totalRaw: acc.tokens,
+                        total: formatK(acc.tokens),
+                        insights: getInsightCount(acc.name)
                     }));
                 case 'Queries':
-                    return queryListData.slice(0, 50).map(q => ({
-                        id: q.id,
-                        name: q.id.length > 20 ? `${q.id.substring(0, 15)}...` : q.id,
-                        subName: q.id,
-                        account: connectionsData[Math.floor(Math.random() * connectionsData.length)].name, // Mock account association
-                        totalRaw: q.costCredits,
-                        total: q.costCredits.toFixed(2),
-                        warehouse: q.warehouse,
-                        duration: q.duration,
-                        status: q.status,
-                        insights: getInsightCount(q.id)
-                    }));
-                case 'Table':
-                    return databaseTablesData.map(t => ({
-                        id: t.id,
-                        name: t.name,
-                        subName: 'Primary Schema',
-                        rowsRaw: t.rows,
-                        sizeRaw: t.sizeGB,
-                        rows: t.rows.toLocaleString(),
-                        size: t.sizeGB.toLocaleString(),
-                        insights: getInsightCount(t.name)
-                    }));
-                case 'Applications':
-                    return applicationsData.map(app => ({
-                        id: app.id,
-                        name: app.name,
-                        account: app.accountName,
-                        totalRaw: app.totalCredits,
-                        warehouseRaw: app.warehouseCredits,
-                        storageRaw: app.storageCredits,
-                        total: formatK(app.totalCredits),
-                        warehouse: formatK(app.warehouseCredits),
-                        storage: formatK(app.storageCredits),
-                        insights: getInsightCount(app.name)
+                    return connectionsData.map(acc => ({
+                        id: acc.id,
+                        name: acc.name,
+                        subName: acc.identifier,
+                        queriesCountRaw: parseInt(acc.queriesCount.replace('K', '')) * 1000,
+                        queriesCount: acc.queriesCount,
+                        totalRaw: acc.tokens,
+                        total: formatK(acc.tokens),
+                        insights: getInsightCount(acc.name)
                     }));
                 default:
                     return connectionsData.map(acc => ({ 
                         id: acc.id, 
                         name: acc.name, 
-                        subName: 'Standard node', 
-                        totalRaw: acc.tokens,
+                        subName: acc.identifier, 
+                        totalRaw: acc.tokens, 
                         total: formatK(acc.tokens),
                         insights: getInsightCount(acc.name)
                     }));
@@ -284,25 +253,16 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
 
         let rows: any[] = prepareData();
 
-        // Apply Search and Account filters
         rows = rows.filter((item: any) => {
-            const matchesSearch = (item.name || item.displayName || item.user || '').toLowerCase().includes(searchTerm.toLowerCase());
-            let matchesAccount = true;
-            if (selectedAccount !== 'All') {
-                const itemAccount = item.accountName || item.account || ( (activeCategory === 'Cortex' || activeCategory === 'Cloud Service' || activeCategory === 'Accounts' || activeCategory === 'Compute' || activeCategory === 'Storage') ? item.name : null);
-                matchesAccount = itemAccount === selectedAccount;
-            }
-            return matchesSearch && matchesAccount;
+            return (item.name || item.displayName || item.user || '').toLowerCase().includes(searchTerm.toLowerCase());
         });
 
-        // Apply Sorting
         if (sortConfig) {
             rows.sort((a: any, b: any) => {
                 const key = sortConfig.key.toLowerCase().split(' ')[0];
                 let valA = a[key + 'Raw'] !== undefined ? a[key + 'Raw'] : a[key];
                 let valB = b[key + 'Raw'] !== undefined ? b[key + 'Raw'] : b[key];
                 if (key === 'account' && (activeCategory === 'Accounts' || activeCategory === 'Queries')) { valA = a.account || a.name; valB = b.account || b.name; }
-                if (key === 'application' && activeCategory === 'Applications') { valA = a.name; valB = b.name; }
                 if (key === 'insights') { valA = a.insights; valB = b.insights; }
                 if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
                 if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -313,20 +273,25 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
         const headers = (() => {
             switch (activeCategory) {
                 case 'Accounts': return ['Account name', 'Total credits', 'Compute credits', 'Storage credits', 'Cloud service', 'Insights'];
-                case 'Compute': return ['Account name', 'AI service', 'Auto clustering', 'Serverless task', 'Data ingest', 'Warehouse', 'Search optimized', 'Insights'];
-                case 'Storage': return ['Account name', 'Total credits', 'Active bytes credits', 'Staged bytes credits', 'Failsafe credits', 'Hybrid credits', 'Time travel', 'Insights'];
-                case 'Cloud Service': return ['Account name', 'CS Credits', 'Compute credits', 'Ratio', 'Billed credits', 'Insights'];
+                case 'Compute': return ['Account name', 'Total credits', 'AI service', 'Auto clustering', 'Serverless task', 'Data ingest', 'Warehouse', 'Search optimized', 'Query acceleration', 'Insights'];
+                case 'Storage': return ['Account name', 'Total credits', 'Total size', 'Unused table size', 'Insights'];
                 case 'Cortex': return ['Account name', 'Model', 'Tokens', 'Credits', 'Insights'];
-                case 'User': return ['User name', 'Role', 'Total credits', 'Insights'];
-                case 'Queries': return ['Query ID', 'Account name', 'Total credits', 'Warehouse', 'Duration', 'Insights'];
-                case 'Table': return ['Table name', 'Rows', 'Size (GB)', 'Insights'];
-                case 'Applications': return ['Application name', 'Account', 'Total credits', 'Warehouse', 'Storage', 'Insights'];
+                case 'User': return ['Account name', 'User count', 'Total credits', 'Insights'];
+                case 'Queries': return ['Account name', 'Queries count', 'Total credits', 'Insights'];
+                case 'Applications': return ['Account name', 'Application count', 'Total credits', 'Insights'];
                 default: return ['Entity', 'Total credits', 'Insights'];
             }
         })();
 
         return { headers, rows };
-    }, [activeCategory, searchTerm, selectedAccount, sortConfig]);
+    }, [activeCategory, searchTerm, sortConfig]);
+
+    const paginatedRows = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return tableData.rows.slice(startIndex, startIndex + itemsPerPage);
+    }, [tableData.rows, currentPage, itemsPerPage]);
+
+    const totalPages = Math.ceil(tableData.rows.length / itemsPerPage);
 
     const activePills = useMemo(() => {
         switch (activeCategory) {
@@ -340,21 +305,19 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 ];
             case 'Compute':
                 return [
-                    { label: 'Total compute credits', value: '44.25K' },
-                    { label: 'Warehouse usage', value: '41.1K' },
+                    { label: 'Total credits', value: '44.25K' },
+                    { label: 'Warehouse', value: '41.1K' },
+                    { label: 'AI service', value: '1.2K' },
                     { label: 'Serverless task', value: '2.4K' },
-                    { label: 'Auto clustering', value: '0.75K' }
+                    { label: 'Auto clustering', value: '0.75K' },
+                    { label: 'Data ingest', value: '0.6K' }
                 ];
             case 'Storage':
                 return [
-                    { label: 'Storage', value: '36 TB' },
-                    { label: 'Storage credits', value: '1.5K' }
-                ];
-            case 'Cloud Service':
-                return [
-                    { label: 'CS credits', value: '2.0K' },
-                    { label: 'Billed', value: '450' },
-                    { label: 'Adjustment savings', value: '1.55K' }
+                    { label: 'Total storage', value: '96.8 TB' },
+                    { label: 'Storage credits', value: '2.1K' },
+                    { label: 'Unused storage', value: '18.4 TB' },
+                    { label: 'Total insights', value: '142' }
                 ];
             case 'Cortex':
                 return [
@@ -370,17 +333,10 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 return [
                     { label: 'Queries', value: '950' }
                 ];
-            case 'Table':
-                return [
-                    { label: 'Tables', value: '865' }
-                ];
             case 'Applications':
                 return [
                     { label: 'Total applications', value: '5' },
-                    { label: 'Total credits', value: '504.65' },
-                    { label: 'Warehouse', value: '459.30' },
-                    { label: 'Storage', value: '28.10' },
-                    { label: 'Others', value: '17.25' }
+                    { label: 'Total credits', value: '50.5K' }
                 ];
             default:
                 return [
@@ -390,13 +346,109 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
     }, [activeCategory]);
 
     const bottomInsights = useMemo(() => {
+        if (activeCategory === 'Applications') {
+            const topApps = [...applicationsData].sort((a,b) => b.totalCredits - a.totalCredits);
+            const totalWh = applicationsData.reduce((sum, a) => sum + a.warehouseCredits, 0);
+            const totalSt = applicationsData.reduce((sum, a) => sum + a.storageCredits, 0);
+            const totalOt = applicationsData.reduce((sum, a) => sum + a.otherCredits, 0);
+            
+            return [
+                {
+                    title: 'Top credits consuming application',
+                    subtitle: 'Highest consumers across all organization accounts.',
+                    chart: (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={topApps} margin={{ left: 20, right: 20, top: 10, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F0" />
+                                <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9A9AB2', fontWeight: 600}} />
+                                <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9A9AB2', fontWeight: 600}} />
+                                <Tooltip cursor={{fill: 'rgba(105, 50, 213, 0.05)'}} />
+                                <Bar dataKey="totalCredits" name="Credits" fill="#6932D5" radius={[4, 4, 0, 0]} barSize={32} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )
+                },
+                {
+                    title: 'Application Credits Mix',
+                    subtitle: 'Aggregate cost distribution for application workloads.',
+                    chart: (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie 
+                                    data={[
+                                        { name: 'Compute', value: totalWh },
+                                        { name: 'Storage', value: totalSt },
+                                        { name: 'Others', value: totalOt }
+                                    ]} 
+                                    innerRadius={70} 
+                                    outerRadius={100} 
+                                    paddingAngle={8} 
+                                    dataKey="value"
+                                >
+                                    <Cell fill="#6932D5" stroke="none" />
+                                    <Cell fill="#A78BFA" stroke="none" />
+                                    <Cell fill="#DDD6FE" stroke="none" />
+                                </Pie>
+                                <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    )
+                }
+            ];
+        }
+
+        if (activeCategory === 'Storage') {
+            const storageData = connectionsData.map(acc => ({ name: acc.name, size: acc.storageGB / 1000 }));
+            const totalActive = connectionsData.reduce((sum, a) => sum + a.storageGB, 0);
+            const totalUnused = Math.round(totalActive * 0.18);
+            
+            return [
+                {
+                    title: 'Top accounts by storage size',
+                    subtitle: 'Ranking of organization accounts by TB volume.',
+                    chart: (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={storageData.sort((a,b) => b.size - a.size)} layout="vertical" margin={{ left: 50, right: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F0" />
+                                <XAxis type="number" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9A9AB2', fontWeight: 600}} />
+                                <YAxis dataKey="name" type="category" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#5A5A72', fontWeight: 600}} width={80} />
+                                <Tooltip />
+                                <Bar dataKey="size" name="Volume (TB)" fill="#6932D5" radius={[0, 4, 4, 0]} barSize={12} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )
+                },
+                {
+                    title: 'Organization Storage Health',
+                    subtitle: 'Active data vs. potential stale data (Unused > 30d).',
+                    chart: (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie 
+                                    data={[
+                                        { name: 'Active Data', value: totalActive - totalUnused },
+                                        { name: 'Potential Stale', value: totalUnused }
+                                    ]} 
+                                    innerRadius={70} 
+                                    outerRadius={100} 
+                                    paddingAngle={10} 
+                                    dataKey="value"
+                                >
+                                    <Cell fill="#6932D5" />
+                                    <Cell fill="#F87171" />
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    )
+                }
+            ];
+        }
+
         switch (activeCategory) {
             case 'Accounts':
-            case 'Applications':
-            case 'Cloud Service':
             case 'Cortex':
             case 'Compute':
-            case 'Storage':
                 return [
                     {
                         title: 'Consumption Trend',
@@ -428,7 +480,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                         data={[
                                             { name: 'Compute', value: 80 },
                                             { name: 'Storage', value: 10 },
-                                            { name: 'Cloud/Cortex', value: 10 }
+                                            { name: 'Cortex', value: 10 }
                                         ]} 
                                         innerRadius={60} 
                                         outerRadius={90} 
@@ -456,7 +508,13 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
     const handleAccountClick = (accountId: string) => {
         const account = connectionsData.find(acc => acc.id === accountId);
         if (account && onSelectAccount) {
-            onSelectAccount(account);
+            if (activeCategory === 'Applications') {
+                onSelectAccount(account, 'Applications');
+            } else if (activeCategory === 'Storage') {
+                onSelectAccount(account, 'Storage summary');
+            } else {
+                onSelectAccount(account);
+            }
         }
     };
 
@@ -473,6 +531,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
             direction = 'desc';
         }
         setSortConfig({ key, direction });
+        setCurrentPage(1);
     };
 
     return (
@@ -483,7 +542,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                     {categories.map(cat => (
                         <button
                             key={cat.id}
-                            onClick={() => setActiveCategory(cat.id)}
+                            onClick={() => { setActiveCategory(cat.id); setCurrentPage(1); }}
                             className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap ${
                                 activeCategory === cat.id 
                                 ? 'text-primary font-bold' 
@@ -506,39 +565,13 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
             </div>
 
             <div className="bg-white rounded-[12px] border border-border-light shadow-sm mb-8 flex flex-col min-h-0">
-                <div className="px-6 py-4 flex justify-between items-center border-b border-border-light bg-white rounded-t-[12px] z-[20] flex-shrink-0">
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium text-text-secondary">Account</span>
-                        <div className="relative" ref={accountMenuRef}>
-                            <button 
-                                onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-surface-nested text-sm font-bold text-text-primary border border-border-light transition-all"
-                            >
-                                {selectedAccount}
-                                <IconChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform ${isAccountMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isAccountMenuOpen && (
-                                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-border-color py-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
-                                    {accountOptions.map(opt => (
-                                        <button
-                                            key={opt}
-                                            onClick={() => { setSelectedAccount(opt); setIsAccountMenuOpen(false); }}
-                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors ${selectedAccount === opt ? 'font-bold text-primary bg-primary/5' : 'text-text-secondary'}`}
-                                        >
-                                            {opt}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <div className="w-px h-4 bg-border-color" />
-                    </div>
+                <div className="px-6 py-4 flex justify-end items-center border-b border-border-light bg-white rounded-t-[12px] z-[20] flex-shrink-0">
                     <div className="relative">
                         <IconSearch className="w-4 h-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
                         <input 
                             type="text" 
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             className="bg-transparent border-none text-sm font-medium focus:ring-0 outline-none pr-8 placeholder:text-text-muted w-64 text-right"
                             placeholder="Search..."
                         />
@@ -549,7 +582,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                     <table className="w-full text-left border-separate border-spacing-0">
                         <thead className="bg-[#F8F9FA] sticky top-0 z-10">
                             <tr>
-                                {tableContent.headers.map((h) => (
+                                {tableData.headers.map((h) => (
                                     <th 
                                         key={h} 
                                         onClick={() => requestSort(h)}
@@ -570,52 +603,30 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-border-light">
-                            {tableContent.rows.map((row: any) => (
+                            {paginatedRows.map((row: any) => (
                                 <tr key={row.id} className="hover:bg-surface-nested transition-colors group">
-                                    <td className="px-6 py-5 relative">
-                                        {activeCategory === 'Queries' && (
-                                            <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-r ${row.status === 'Success' ? 'bg-status-success' : 'bg-status-error'}`}></div>
-                                        )}
+                                    <td className="px-6 py-5">
                                         <div className="flex flex-col">
-                                            {activeCategory === 'Accounts' || activeCategory === 'Compute' || activeCategory === 'Storage' ? (
+                                            {(activeCategory === 'Accounts' || activeCategory === 'Compute' || activeCategory === 'Storage' || activeCategory === 'User' || activeCategory === 'Queries' || activeCategory === 'Applications') ? (
                                                 <button 
                                                     onClick={() => handleAccountClick(row.id)}
                                                     className="text-sm font-bold text-link text-left hover:underline decoration-primary/30 underline-offset-2"
                                                 >
                                                     {row.name}
                                                 </button>
-                                            ) : activeCategory === 'Applications' ? (
-                                                <button 
-                                                    onClick={() => onSelectApplication?.(row.name)}
-                                                    className="text-sm font-bold text-link text-left hover:underline decoration-primary/30 underline-offset-2"
-                                                >
-                                                    {row.name}
-                                                </button>
-                                            ) : activeCategory === 'Queries' ? (
-                                                <button 
-                                                    className="text-sm font-medium text-link text-left hover:underline font-mono"
-                                                >
-                                                    {row.name}
-                                                </button>
                                             ) : (
                                                 <span className="text-sm font-bold text-text-strong">{row.name}</span>
                                             )}
-                                            {row.subName && activeCategory !== 'Queries' && <span className="text-xs text-text-muted font-normal mt-0.5">{row.subName}</span>}
+                                            {row.subName && <span className="text-xs text-text-muted font-mono mt-0.5">{row.subName}</span>}
                                         </div>
                                     </td>
-                                    {tableContent.headers.slice(1).map((h) => {
+                                    {tableData.headers.slice(1).map((h) => {
                                         if (h === 'Insights') {
                                             return (
                                                 <td key={h} className={`px-6 py-5 text-right ${getColumnWidth(h)}`}>
                                                     <div className="flex items-center justify-end">
                                                         <button 
-                                                            onClick={() => {
-                                                                if (activeCategory === 'Queries') {
-                                                                    onNavigateToRecommendations?.({ search: row.subName });
-                                                                } else {
-                                                                    onNavigateToRecommendations?.({ search: row.name });
-                                                                }
-                                                            }}
+                                                            onClick={() => onNavigateToRecommendations?.({ search: row.name })}
                                                             className="inline-flex items-center gap-1 bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10 hover:bg-primary/10 transition-colors"
                                                         >
                                                             <span className="text-xs font-black text-primary">{row.insights}</span>
@@ -626,43 +637,39 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                             );
                                         }
 
-                                        const key = h.toLowerCase().split(' ')[0];
-                                        const val = row[
-                                            key === 'cs' ? 'total' : 
-                                            key === 'account' ? 'account' : 
-                                            key === 'compute' || key === 'warehouse' ? (activeCategory === 'Queries' ? 'warehouse' : 'compute') : 
-                                            key === 'ratio' ? 'ratio' : 
-                                            key === 'billed' ? 'billed' : 
-                                            key === 'model' ? 'subName' : 
-                                            key === 'tokens' ? 'tokens' : 
-                                            key === 'credits' ? 'credits' : 
-                                            key === 'total' ? 'total' : 
-                                            key === 'storage' ? 'storage' : 
-                                            key === 'other' || key === 'others' ? 'others' : 
-                                            key === 'queries' ? 'queries' : 
-                                            key === 'role' ? 'role' : 
-                                            key === 'size' ? 'size' : 
-                                            key === 'cost' ? 'cost' : 
-                                            key === 'efficiency' ? 'efficiency' : 
-                                            key === 'savings' ? 'savings' : 
-                                            key === 'rows' ? 'rows' : 
-                                            key === 'growth' ? 'growth' : 
-                                            key === 'cloud' ? 'cloud' :
-                                            key === 'ai' ? 'ai' :
-                                            key === 'auto' ? 'auto' :
-                                            key === 'serverless' ? 'serverless' :
-                                            key === 'data' ? 'ingest' :
-                                            key === 'search' ? 'search' :
-                                            key === 'active' ? 'active' :
-                                            key === 'staged' ? 'staged' :
-                                            key === 'failsafe' ? 'failsafe' :
-                                            key === 'hybrid' ? 'hybrid' :
-                                            key === 'time' ? 'timetravel' : 
-                                            key === 'duration' ? 'duration' : key
-                                        ];
+                                        const valKey = (() => {
+                                            if (h === 'Total credits') return 'total';
+                                            if (h === 'Total size') return 'size';
+                                            if (h === 'Unused table size') return 'unused';
+                                            if (h === 'Application count') return 'appCount';
+                                            if (h === 'User count') return 'userCount';
+                                            if (h === 'Queries count') return 'queriesCount';
+                                            
+                                            const keyMap: Record<string, string> = {
+                                                'compute': 'compute',
+                                                'storage': 'storage',
+                                                'ai': 'ai',
+                                                'auto': 'auto',
+                                                'serverless': 'serverless',
+                                                'data': 'ingest',
+                                                'warehouse': 'compute',
+                                                'search': 'search',
+                                                'query': 'accelerate',
+                                                'active': 'active',
+                                                'staged': 'staged',
+                                                'failsafe': 'failsafe',
+                                                'hybrid': 'hybrid',
+                                                'time': 'timetravel',
+                                            };
+                                            const key = h.toLowerCase().split(' ')[0];
+                                            return keyMap[key] || key;
+                                        })();
+
+                                        const val = row[valKey];
+                                        
                                         return (
                                             <td key={h} className={`px-6 py-5 ${getColumnWidth(h)}`}>
-                                                <span className={`text-sm font-medium ${h === 'Others' && activeCategory === 'Applications' ? 'text-text-secondary' : 'text-text-primary'}`}>
+                                                <span className="text-sm font-medium text-text-primary">
                                                     {val || '—'}
                                                 </span>
                                             </td>
@@ -673,6 +680,22 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         </tbody>
                     </table>
                 </div>
+
+                {tableData.rows.length > 10 && (
+                    <div className="flex-shrink-0 bg-white border-t border-border-light">
+                        <Pagination 
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={tableData.rows.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            onDialogItemsPerPageChange={(size) => {
+                                setItemsPerPage(size);
+                                setCurrentPage(1);
+                            }}
+                        />
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12 flex-shrink-0">
