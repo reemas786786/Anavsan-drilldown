@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavItem } from './types';
 
@@ -450,5 +449,12 @@ export const accountNavItems = [
             { name: 'Databases', icon: IconList },
         ] 
     },
-    { name: 'AI and insights', icon: IconBrain, children: [] },
+    { 
+        name: 'Cortex', 
+        icon: IconBrain, 
+        children: [
+            { name: 'Cortex list', icon: IconList },
+            { name: 'LLM monitoring', icon: IconTrendingUp }
+        ] 
+    },
 ];

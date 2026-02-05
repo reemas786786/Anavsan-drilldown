@@ -354,6 +354,7 @@ const DashboardEditor: React.FC<DashboardEditorProps> = ({ dashboard, accounts, 
         
         availableWidgetsData.forEach(widget => {
             widget.tags?.forEach(tag => {
+                // FIX: Ensure tag is treated as string for index access.
                 const tagKey = tag as string;
                 counts[tagKey] = (counts[tagKey] || 0) + 1;
             });

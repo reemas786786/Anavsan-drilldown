@@ -78,6 +78,16 @@ export interface Application {
     insightCount: number;
 }
 
+export interface CortexModel {
+    id: string;
+    name: string;
+    category: string;
+    tokens: string;
+    credits: number;
+    lastUsed: string;
+    requestCount: number;
+}
+
 export type WidgetType = 'StatCard' | 'LineChart' | 'BarChart' | 'Table' | 'DonutChart';
 
 export interface Widget {

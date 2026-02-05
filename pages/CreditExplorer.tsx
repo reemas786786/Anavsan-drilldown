@@ -28,13 +28,13 @@ import {
 } from '../constants';
 import Pagination from '../components/Pagination';
 
-type ResourceCategory = 'Accounts' | 'Applications' | 'Compute' | 'Storage' | 'Cortex' | 'User' | 'Queries';
+type ResourceCategory = 'Accounts' | 'Compute' | 'Storage' | 'Applications' | 'Cortex' | 'User' | 'Queries';
 
 const categories: { id: ResourceCategory; label: string }[] = [
     { id: 'Accounts', label: 'Accounts' },
-    { id: 'Applications', label: 'Applications' },
     { id: 'Compute', label: 'Compute' },
     { id: 'Storage', label: 'Storage' },
+    { id: 'Applications', label: 'Applications' },
     { id: 'Cortex', label: 'Cortex' },
     { id: 'User', label: 'Users' },
     { id: 'Queries', label: 'Queries' }
@@ -166,27 +166,18 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         const mockCredits = [4900, 4250, 3400, 2400, 1900, 1600, 1200, 800];
                         const baseVal = idx % 2 === 0 ? 56 : 26;
                         const computeCredits = mockCredits[idx % mockCredits.length];
-                        const totalCompute = (baseVal * 6) + computeCredits + 12;
+                        const serverlessVal = 640; 
+                        const totalCompute = (baseVal * 5) + computeCredits + 12 + serverlessVal; 
                         return {
                             id: acc.id,
                             name: acc.name,
                             subName: acc.identifier,
                             totalRaw: totalCompute,
                             total: formatK(totalCompute),
-                            aiRaw: baseVal,
-                            autoRaw: baseVal,
-                            serverlessRaw: baseVal,
-                            ingestRaw: baseVal,
+                            serverlessRaw: serverlessVal,
+                            serverless: formatK(serverlessVal),
                             computeRaw: computeCredits,
-                            searchRaw: baseVal,
-                            accelerateRaw: 12,
-                            ai: formatK(baseVal),
-                            auto: formatK(baseVal),
-                            serverless: formatK(baseVal),
-                            ingest: formatK(baseVal),
                             compute: formatK(computeCredits),
-                            search: formatK(baseVal),
-                            accelerate: formatK(12),
                             insights: getInsightCount(acc.name)
                         };
                     });
@@ -208,15 +199,22 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         };
                     });
                 case 'Cortex':
-                    return cortexData.map(cx => ({
-                        id: cx.id,
-                        name: cx.name,
-                        subName: cx.model,
-                        tokens: cx.tokens,
-                        creditsRaw: cx.credits,
-                        credits: formatK(cx.credits),
-                        insights: getInsightCount(cx.name)
-                    }));
+                    return connectionsData.map((acc, idx) => {
+                        const modelCounts = [6, 4, 3, 2, 5, 1, 1, 1];
+                        const count = modelCounts[idx % modelCounts.length];
+                        const creditsRaw = [1850, 1240, 4500, 2100, 1100, 900, 400, 200][idx % 8];
+                        return {
+                            id: acc.id,
+                            name: acc.name,
+                            subName: acc.identifier,
+                            modelRaw: count,
+                            model: count.toString(),
+                            tokens: ['1.2M', '850K', '4.5M', '2.1M', '1.1M', '900K', '400K', '200K'][idx % 8],
+                            creditsRaw: creditsRaw,
+                            credits: formatK(creditsRaw),
+                            insights: getInsightCount(acc.name)
+                        };
+                    });
                 case 'User':
                     return connectionsData.map(acc => ({
                         id: acc.id,
@@ -273,7 +271,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
         const headers = (() => {
             switch (activeCategory) {
                 case 'Accounts': return ['Account name', 'Total credits', 'Compute credits', 'Storage credits', 'Cloud service', 'Insights'];
-                case 'Compute': return ['Account name', 'Total credits', 'AI service', 'Auto clustering', 'Serverless task', 'Data ingest', 'Warehouse', 'Search optimized', 'Query acceleration', 'Insights'];
+                case 'Compute': return ['Account name', 'Total credits', 'Serverless', 'Warehouse', 'Insights'];
                 case 'Storage': return ['Account name', 'Total credits', 'Total size', 'Unused table size', 'Insights'];
                 case 'Cortex': return ['Account name', 'Model', 'Tokens', 'Credits', 'Insights'];
                 case 'User': return ['Account name', 'User count', 'Total credits', 'Insights'];
@@ -307,16 +305,14 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 return [
                     { label: 'Total credits', value: '44.25K' },
                     { label: 'Warehouse', value: '41.1K' },
-                    { label: 'AI service', value: '1.2K' },
-                    { label: 'Serverless task', value: '2.4K' },
-                    { label: 'Auto clustering', value: '0.75K' },
-                    { label: 'Data ingest', value: '0.6K' }
+                    { label: 'Serverless', value: '2.4K' },
+                    { label: 'Total insights', value: '142' }
                 ];
             case 'Storage':
                 return [
                     { label: 'Total storage', value: '96.8 TB' },
                     { label: 'Storage credits', value: '2.1K' },
-                    { label: 'Unused storage', value: '18.4 TB' },
+                    { label: 'Potential savings', value: '1.2K' },
                     { label: 'Total insights', value: '142' }
                 ];
             case 'Cortex':
@@ -331,7 +327,8 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 ];
             case 'Queries':
                 return [
-                    { label: 'Queries', value: '950' }
+                    { label: 'Queries', value: '950' },
+                    { label: 'Total credits', value: '48.5K' }
                 ];
             case 'Applications':
                 return [
@@ -512,6 +509,8 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 onSelectAccount(account, 'Applications');
             } else if (activeCategory === 'Storage') {
                 onSelectAccount(account, 'Storage summary');
+            } else if (activeCategory === 'Cortex') {
+                onSelectAccount(account, 'Cortex list');
             } else {
                 onSelectAccount(account);
             }
@@ -607,7 +606,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                 <tr key={row.id} className="hover:bg-surface-nested transition-colors group">
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col">
-                                            {(activeCategory === 'Accounts' || activeCategory === 'Compute' || activeCategory === 'Storage' || activeCategory === 'User' || activeCategory === 'Queries' || activeCategory === 'Applications') ? (
+                                            {(activeCategory === 'Accounts' || activeCategory === 'Compute' || activeCategory === 'Storage' || activeCategory === 'User' || activeCategory === 'Queries' || activeCategory === 'Applications' || activeCategory === 'Cortex') ? (
                                                 <button 
                                                     onClick={() => handleAccountClick(row.id)}
                                                     className="text-sm font-bold text-link text-left hover:underline decoration-primary/30 underline-offset-2"
@@ -660,6 +659,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                                 'failsafe': 'failsafe',
                                                 'hybrid': 'hybrid',
                                                 'time': 'timetravel',
+                                                'model': 'model'
                                             };
                                             const key = h.toLowerCase().split(' ')[0];
                                             return keyMap[key] || key;

@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Account, SQLFile, BigScreenWidget, QueryListItem, PullRequest, User, QueryListFilters, SlowQueryFilters, BreadcrumbItem, Warehouse, AssignedQuery } from '../types';
+import { Account, SQLFile, BigScreenWidget, QueryListItem, PullRequest, User, QueryListFilters, SlowQueryFilters, BreadcrumbItem, Warehouse, AssignedQuery, CortexModel } from '../types';
 import AccountOverviewDashboard from './AccountOverviewDashboard';
 import { SimilarQueryPatternsView } from './QueryPerformanceView';
 import { accountNavItems } from '../constants';
 import Breadcrumb from '../components/Breadcrumb';
 import { 
-    IconChevronDown, 
+    IconChevronDown,
+    IconList, 
+    IconSearch,
+    IconSparkles,
+    IconClock
 } from '../constants';
 import QueryListView from './QueryListView';
 import StorageSummaryView from './StorageSummaryView';
@@ -24,7 +28,7 @@ import AllWarehouses from './AllWarehouses';
 import WarehouseDetailView from './WarehouseDetailView';
 import ContextualSidebar from '../components/ContextualSidebar';
 import ApplicationsView from './ApplicationsView';
-
+import { cortexModelsData } from '../data/dummyData';
 
 interface AccountViewProps {
     account: Account;
@@ -116,6 +120,92 @@ const MobileNav: React.FC<{
                     </ul>
                 </div>
             )}
+        </div>
+    );
+};
+
+const CortexListView: React.FC = () => {
+    const [search, setSearch] = useState('');
+    
+    const filteredModels = useMemo(() => {
+        return cortexModelsData.filter(m => 
+            m.name.toLowerCase().includes(search.toLowerCase()) || 
+            m.category.toLowerCase().includes(search.toLowerCase())
+        );
+    }, [search]);
+
+    return (
+        <div className="flex flex-col h-full bg-background px-6 pt-4 pb-12 space-y-4">
+            <div className="flex-shrink-0 mb-8">
+                <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Cortex Models</h1>
+                <p className="text-sm text-text-secondary font-medium mt-1">Manage and monitor Snowflake Cortex AI models active in this account.</p>
+            </div>
+
+            <div className="bg-white rounded-2xl flex flex-col flex-grow min-h-0 shadow-sm border border-border-light overflow-hidden">
+                <div className="px-6 py-4 flex justify-end items-center border-b border-border-light bg-white flex-shrink-0">
+                    <div className="relative">
+                        <IconSearch className="w-4 h-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
+                        <input 
+                            type="text" 
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="bg-transparent border-none text-sm font-medium focus:ring-0 outline-none pr-8 placeholder:text-text-muted w-64 text-right"
+                            placeholder="Search models..."
+                        />
+                    </div>
+                </div>
+
+                <div className="overflow-y-auto flex-grow min-h-0">
+                    <table className="w-full text-[13px] border-separate border-spacing-0">
+                        <thead className="bg-[#F8F9FA] sticky top-0 z-10">
+                            <tr>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Model Name</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Category</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Token Usage</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Credits</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-left uppercase tracking-widest">Requests</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light text-right uppercase tracking-widest">Last Used</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-border-light">
+                            {filteredModels.length > 0 ? (
+                                filteredModels.map(model => (
+                                    <tr key={model.id} className="hover:bg-surface-nested transition-colors group">
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                                                    <IconSparkles className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">{model.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <span className="px-2 py-1 bg-surface-nested rounded-full text-[10px] font-bold text-text-secondary border border-border-color uppercase tracking-tighter">
+                                                {model.category}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-5 font-medium text-text-primary">{model.tokens}</td>
+                                        <td className="px-6 py-5 font-black text-text-strong">{model.credits}K</td>
+                                        <td className="px-6 py-5 font-medium text-text-secondary">{model.requestCount.toLocaleString()}</td>
+                                        <td className="px-6 py-5 text-right whitespace-nowrap">
+                                            <div className="flex items-center justify-end gap-1.5 text-text-muted font-medium">
+                                                <IconClock className="w-3.5 h-3.5" />
+                                                {model.lastUsed}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} className="py-20 text-center text-text-muted italic">
+                                        No models found matching your search.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };
@@ -269,12 +359,14 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
                 return <StorageSummaryView onSelectDatabase={handleSelectDatabaseFromSummary} onSetBigScreenWidget={onSetBigScreenWidget} />;
             case 'Databases':
                 return <DatabasesView selectedDatabaseId={selectedDatabaseId} onSelectDatabase={setSelectedDatabaseId} onBackToList={handleBackToDbList} />;
+            case 'Cortex list':
+                return <CortexListView />;
             default:
                 return <div className="px-6 pt-4 pb-12"><h1 className="text-xl font-bold">{activePage}</h1><p>Content for this page is under construction.</p></div>;
         }
     };
     
-    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'All Warehouses', 'Applications'].includes(activePage);
+    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'All Warehouses', 'Applications', 'Cortex list'].includes(activePage);
 
     return (
         <div className="flex h-full bg-background">

@@ -229,6 +229,7 @@ const Recommendations: React.FC<{
     const [resourceTypeFilter, setResourceTypeFilter] = useState<string[]>([]);
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
     const [accountFilter, setAccountFilter] = useState<string[]>([]);
+    const [insightTypeFilter, setInsightTypeFilter] = useState<string[]>([]);
     
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -248,6 +249,9 @@ const Recommendations: React.FC<{
     const handleClearContext = () => {
         setSearch('');
         setAccountFilter([]);
+        setInsightTypeFilter([]);
+        setResourceTypeFilter([]);
+        setStatusFilter([]);
         setIsContextual(false);
         setCurrentPage(1);
     };
@@ -262,12 +266,14 @@ const Recommendations: React.FC<{
                 rec.affectedResource.toLowerCase().includes(search.toLowerCase()) ||
                 rec.message.toLowerCase().includes(search.toLowerCase()) ||
                 rec.insightType.toLowerCase().includes(search.toLowerCase()) ||
-                rec.resourceType.toLowerCase().includes(search.toLowerCase())
+                rec.resourceType.toLowerCase().includes(search.toLowerCase()) ||
+                rec.accountName.toLowerCase().includes(search.toLowerCase())
             )) return false;
 
             if (resourceTypeFilter.length > 0 && !resourceTypeFilter.includes(rec.resourceType)) return false;
             if (statusFilter.length > 0 && !statusFilter.includes(rec.status)) return false;
             if (accountFilter.length > 0 && !accountFilter.includes(rec.accountName)) return false;
+            if (insightTypeFilter.length > 0 && !insightTypeFilter.includes(rec.insightType)) return false;
 
             return true;
         });
@@ -280,7 +286,7 @@ const Recommendations: React.FC<{
             });
         }
         return filtered;
-    }, [data, search, resourceTypeFilter, statusFilter, accountFilter, sortConfig, isContextual]);
+    }, [data, search, resourceTypeFilter, statusFilter, accountFilter, insightTypeFilter, sortConfig, isContextual]);
 
     const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
     
@@ -302,6 +308,7 @@ const Recommendations: React.FC<{
     };
 
     const accountOptions = useMemo(() => connectionsData.map(a => a.name), []);
+    const insightTypeOptions = useMemo(() => [...new Set(initialData.map(d => d.insightType))], []);
 
     const contextTagLabel = useMemo(() => {
         if (!isContextual) return null;
@@ -310,7 +317,6 @@ const Recommendations: React.FC<{
         return "Applied Filters";
     }, [isContextual, initialFilters]);
 
-    // If a recommendation is selected, render the Detail View instead of the List View
     if (selectedRecommendation) {
         return (
             <div className="px-6 pt-4 pb-12 h-full overflow-hidden">
@@ -349,51 +355,68 @@ const Recommendations: React.FC<{
                 )}
             </div>
 
-            <div className="bg-surface rounded-2xl shadow-sm overflow-hidden border border-border-light flex flex-col min-h-0">
-                <div className="px-4 py-3 flex items-center gap-5 text-xs text-text-secondary border-b border-border-light flex-shrink-0">
-                    <MultiSelectDropdown 
-                        label="Account" 
-                        options={accountOptions} 
-                        selectedOptions={accountFilter} 
-                        onChange={setAccountFilter} 
-                        selectionMode="single" 
-                    />
-                    <div className="w-px h-3 bg-border-color"></div>
-                    <MultiSelectDropdown 
-                        label="Resource" 
-                        options={['Query', 'Warehouse', 'Storage', 'Database', 'User', 'Application', 'Account']} 
-                        selectedOptions={resourceTypeFilter} 
-                        onChange={setResourceTypeFilter} 
-                    />
-                    <div className="w-px h-3 bg-border-color"></div>
-                    <MultiSelectDropdown 
-                        label="Status" 
-                        options={['New', 'Read', 'In Progress', 'Resolved', 'Archived']} 
-                        selectedOptions={statusFilter} 
-                        onChange={setStatusFilter} 
-                    />
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-border-light flex flex-col min-h-0">
+                <div className="px-6 py-4 flex items-center gap-4 text-[13px] text-text-secondary border-b border-border-light flex-shrink-0 bg-white overflow-x-auto no-scrollbar">
+                    <div className="flex items-center gap-3">
+                        <MultiSelectDropdown 
+                            label="Account" 
+                            options={accountOptions} 
+                            selectedOptions={accountFilter} 
+                            onChange={setAccountFilter} 
+                            selectionMode="single"
+                            layout="inline"
+                        />
+                        <div className="w-px h-4 bg-border-color"></div>
+                        <MultiSelectDropdown 
+                            label="Resource" 
+                            options={['Query', 'Warehouse', 'Storage', 'Database', 'User', 'Application', 'Account']} 
+                            selectedOptions={resourceTypeFilter} 
+                            onChange={setResourceTypeFilter} 
+                            selectionMode="single"
+                            layout="inline"
+                        />
+                        <div className="w-px h-4 bg-border-color"></div>
+                        <MultiSelectDropdown 
+                            label="Type" 
+                            options={insightTypeOptions} 
+                            selectedOptions={insightTypeFilter} 
+                            onChange={setInsightTypeFilter} 
+                            selectionMode="single"
+                            layout="inline"
+                        />
+                        <div className="w-px h-4 bg-border-color"></div>
+                        <MultiSelectDropdown 
+                            label="Status" 
+                            options={['New', 'Read', 'In Progress', 'Resolved', 'Archived']} 
+                            selectedOptions={statusFilter} 
+                            onChange={setStatusFilter} 
+                            selectionMode="single"
+                            layout="inline"
+                        />
+                    </div>
                     
-                    <div className="relative flex-grow ml-auto" style={{maxWidth: '240px'}}>
-                        <IconSearch className="h-3.5 w-3.5 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                    <div className="relative flex-grow ml-auto max-w-xs">
+                        <IconSearch className="h-4 w-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
                         <input 
                             type="search" 
                             value={search} 
                             onChange={e => handleSearchChange(e.target.value)} 
                             placeholder="Search..." 
-                            className="w-full pl-8 pr-4 py-1.5 bg-background border-transparent rounded-full text-[10px] font-medium focus:ring-1 focus:ring-primary" 
+                            className="w-full bg-[#F2F4F7] border-none rounded-lg py-2 pl-4 pr-10 text-[13px] font-medium focus:ring-1 focus:ring-primary placeholder:text-text-muted"
                         />
                     </div>
                 </div>
 
-                <div className="overflow-y-auto flex-grow min-h-0">
-                    <table className="w-full text-[12px] border-separate border-spacing-0">
-                        <thead className="text-[10px] text-text-secondary uppercase tracking-widest sticky top-0 z-10 bg-[#F8F9FA] border-b border-border-color">
+                <div className="overflow-y-auto flex-grow min-h-0 no-scrollbar">
+                    <table className="w-full text-[13px] text-left border-separate border-spacing-0">
+                        <thead className="bg-[#E0E2E5] sticky top-0 z-10">
                             <tr>
-                                <th className="px-5 py-3 font-bold text-left border-b border-border-color">Type</th>
-                                <th className="px-5 py-3 font-bold text-left border-b border-border-color">Resource</th>
-                                <th className="px-5 py-3 font-bold text-left border-b border-border-color">Recommendation</th>
-                                <th className="px-5 py-3 font-bold text-left border-b border-border-color">Status</th>
-                                <th className="px-5 py-3 font-bold text-right border-b border-border-color">Action</th>
+                                <th className="px-6 py-4 font-bold text-text-strong tracking-tight uppercase text-[11px] w-[140px]">Account</th>
+                                <th className="px-6 py-4 font-bold text-text-strong tracking-tight uppercase text-[11px] w-[120px]">Resource Type</th>
+                                <th className="px-6 py-4 font-bold text-text-strong tracking-tight uppercase text-[11px] w-[180px]">Resource ID</th>
+                                <th className="px-6 py-4 font-bold text-text-strong tracking-tight uppercase text-[11px]">Recommendation</th>
+                                <th className="px-6 py-4 font-bold text-text-strong tracking-tight uppercase text-[11px] w-[150px]">Status</th>
+                                <th className="px-6 py-4 font-bold text-text-strong tracking-tight uppercase text-[11px] text-right w-[80px]">Action</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white">
@@ -401,30 +424,44 @@ const Recommendations: React.FC<{
                                 <tr 
                                     key={rec.id} 
                                     onClick={() => onSelectRecommendation(rec)}
-                                    className="hover:bg-surface-nested transition-colors cursor-pointer group"
+                                    className="hover:bg-surface-nested transition-colors cursor-pointer group border-b border-border-light"
                                 >
-                                    <td className="px-5 py-4 font-bold text-text-primary border-b border-border-light">{rec.resourceType}</td>
-                                    <td className="px-5 py-4 font-mono text-[11px] text-text-primary max-w-[160px] truncate border-b border-border-light" title={rec.affectedResource}>{rec.affectedResource}</td>
-                                    <td className="px-5 py-4 max-w-xs truncate border-b border-border-light text-text-secondary" title={rec.message}>{rec.message}</td>
-                                    <td className="px-5 py-4 border-b border-border-light"><StatusBadge status={rec.status} /></td>
-                                    <td className="px-5 py-4 text-right border-b border-border-light">
-                                        <button className="p-1.5 rounded-full border border-border-color text-text-muted group-hover:text-primary group-hover:border-primary transition-colors" title="View Details">
-                                            <IconInfo className="h-3.5 w-3.5" />
+                                    <td className="px-6 py-5 font-medium text-text-secondary whitespace-nowrap">
+                                        {rec.accountName}
+                                    </td>
+                                    <td className="px-6 py-5 font-bold text-text-primary whitespace-nowrap">
+                                        {rec.resourceType}
+                                    </td>
+                                    <td className="px-6 py-5 font-mono text-[12px] text-text-primary">
+                                        <span className="truncate block max-w-[160px]" title={rec.affectedResource}>
+                                            {rec.affectedResource}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-5 text-text-secondary">
+                                        <div className="font-bold text-text-strong text-xs mb-0.5">{rec.insightType}</div>
+                                        <div className="line-clamp-1">{rec.message}</div>
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <StatusBadge status={rec.status} />
+                                    </td>
+                                    <td className="px-6 py-5 text-right">
+                                        <button className="p-2 text-text-muted hover:text-primary transition-colors">
+                                            <IconInfo className="h-5 w-5" />
                                         </button>
                                     </td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={5} className="py-20 text-center">
+                                    <td colSpan={6} className="py-24 text-center">
                                         <div className="flex flex-col items-center">
-                                            <div className="w-12 h-12 bg-surface-nested rounded-full flex items-center justify-center mb-4 border border-border-light">
-                                                <IconSearch className="w-6 h-6 text-text-muted" />
+                                            <div className="w-16 h-16 bg-surface-nested rounded-full flex items-center justify-center mb-4 border border-border-light">
+                                                <IconSearch className="w-8 h-8 text-text-muted" />
                                             </div>
-                                            <p className="text-sm font-bold text-text-strong">No recommendations found</p>
-                                            <p className="text-xs text-text-secondary mt-1">Try adjusting your filters or search criteria.</p>
+                                            <h3 className="text-base font-bold text-text-strong">No recommendations found</h3>
+                                            <p className="text-sm text-text-secondary mt-1 max-w-sm">Try adjusting your filters or search criteria. If you've applied a context filter, clear it to see all entries.</p>
                                             {isContextual && (
-                                                <button onClick={handleClearContext} className="mt-4 text-xs font-bold text-primary hover:underline underline-offset-4">
-                                                    Clear contextual filter
+                                                <button onClick={handleClearContext} className="mt-6 text-sm font-bold text-primary hover:underline underline-offset-4">
+                                                    Clear context and show all
                                                 </button>
                                             )}
                                         </div>
@@ -435,7 +472,7 @@ const Recommendations: React.FC<{
                     </table>
                 </div>
 
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 border-t border-border-light">
                     <Pagination 
                         currentPage={currentPage}
                         totalPages={totalPages}

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, Legend } from 'recharts';
 import { 
     usageCreditsData, 
     resourceSnapshotData, 
@@ -110,12 +110,25 @@ const RecommendationItem: React.FC<{ rec: typeof finopsRecommendations[0] }> = (
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
         return (
-            <div className="bg-surface p-3 rounded-lg shadow-xl border border-border-color">
-                <p className="text-xs font-bold text-text-strong mb-1">{label}</p>
-                <p className="text-xs text-primary font-black">
-                    {payload[0].value.toLocaleString()} <span className="text-[10px] text-text-muted uppercase">Credits (K)</span>
-                </p>
+            <div className="bg-surface p-3 rounded-lg shadow-xl border border-border-color min-w-[160px]">
+                <p className="text-xs font-bold text-text-strong mb-2 border-b border-border-light pb-1">{label}</p>
+                <div className="space-y-1.5 mb-2">
+                    {payload.map((entry: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                                <span className="text-[10px] font-medium text-text-secondary">{entry.name}:</span>
+                            </div>
+                            <span className="text-[10px] font-black text-text-strong">{entry.value.toLocaleString()} cr</span>
+                        </div>
+                    ))}
+                </div>
+                <div className="flex items-center justify-between border-t border-border-light pt-1.5 mt-1.5">
+                    <span className="text-[10px] font-black text-text-muted uppercase">Total Credits</span>
+                    <span className="text-xs font-black text-primary">{total.toLocaleString()} cr</span>
+                </div>
             </div>
         );
     }
@@ -196,8 +209,43 @@ const WavyGridBackground = () => (
     </div>
 );
 
+// Custom Y-Axis tick to allow navigation when clicking account names
+const CustomYAxisTick = (props: any) => {
+    const { x, y, payload, onSelect } = props;
+    // Find the corresponding account object from connectionsData
+    const account = connectionsData.find(acc => acc.name === payload.value);
+
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text
+                x={-10}
+                y={0}
+                dy={4}
+                textAnchor="end"
+                fill="#5A5A72"
+                fontSize={10}
+                fontWeight={700}
+                style={{ cursor: 'pointer', outline: 'none' }}
+                className="hover:fill-primary transition-colors"
+                onClick={() => account && onSelect(account)}
+            >
+                {payload.value.length > 12 ? `${payload.value.substring(0, 12)}...` : payload.value}
+            </text>
+        </g>
+    );
+};
+
 const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAccountClick, onNavigate }) => {
-    const topAccountsData = useMemo(() => connectionsData.map(acc => ({ name: acc.name, credits: acc.tokens / 1000 })), []);
+    // derive breakdowns for stacked bar
+    const topAccountsData = useMemo(() => connectionsData.map(acc => {
+        const total = acc.tokens / 1000;
+        return {
+            name: acc.name,
+            warehouse: total * 0.82,
+            storage: total * 0.12,
+            cloud: total * 0.06
+        };
+    }), []);
 
     if (accounts.length === 0) {
         return (
@@ -261,10 +309,10 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                             onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Accounts' })} 
                         />
                         <SummaryMetricCard 
-                            label="Applications" 
-                            value="4" 
-                            subValue="3.5K Credits" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Applications' })} 
+                            label="Compute" 
+                            value="44.25K" 
+                            subValue="Credits"
+                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Compute' })} 
                         />
                         <SummaryMetricCard 
                             label="Storage" 
@@ -273,10 +321,10 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                             onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Storage' })} 
                         />
                         <SummaryMetricCard 
-                            label="Compute" 
-                            value="44.25K" 
-                            subValue="Credits"
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Compute' })} 
+                            label="Applications" 
+                            value="4" 
+                            subValue="3.5K Credits" 
+                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Applications' })} 
                         />
                         <SummaryMetricCard 
                             label="Cortex" 
@@ -312,14 +360,29 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                     title="Top accounts by credits" 
                     headerActions={<button onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Accounts' })} className="text-[11px] font-bold text-link hover:underline">View all</button>}
                 >
-                    <div className="h-[300px]">
+                    <div className="h-[350px] flex flex-col">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={topAccountsData} margin={{ left: 50, right: 20 }}>
+                            <BarChart layout="vertical" data={topAccountsData} margin={{ left: 50, right: 30, top: 10, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2DDEB" opacity={0.5} />
                                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#9A9AB2' }} />
-                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#5A5A72' }} width={80} />
+                                <YAxis 
+                                    dataKey="name" 
+                                    type="category" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    width={120} 
+                                    tick={<CustomYAxisTick onSelect={onSelectAccount} />}
+                                />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="credits" fill="#6932D5" radius={[0, 4, 4, 0]} barSize={8} />
+                                <Legend 
+                                    verticalAlign="bottom" 
+                                    align="center" 
+                                    iconType="circle"
+                                    wrapperStyle={{ paddingTop: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                                />
+                                <Bar dataKey="warehouse" name="Warehouse" stackId="a" fill="#6932D5" barSize={16} />
+                                <Bar dataKey="storage" name="Storage" stackId="a" fill="#A78BFA" barSize={16} />
+                                <Bar dataKey="cloud" name="Cloud Service" stackId="a" fill="#C4B5FD" radius={[0, 4, 4, 0]} barSize={16} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
