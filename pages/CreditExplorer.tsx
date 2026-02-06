@@ -127,7 +127,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         accountName: wl.account, 
                         accountIdentifier: connectionsData.find(c => c.name === wl.account)?.identifier || 'acme.snowflakecomputing.com',
                         totalRaw: wl.credits,
-                        creditsFormatted: wl.credits.toLocaleString(),
+                        serviceCredits: wl.credits.toLocaleString(),
                         queriesFormatted: wl.queryCount.toLocaleString(),
                         insights: getInsightCount(wl.account, 'Workloads')
                     }));
@@ -137,7 +137,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         accountName: svc.account,
                         accountIdentifier: connectionsData.find(c => c.name === svc.account)?.identifier || 'acme.snowflakecomputing.com',
                         totalRaw: svc.credits,
-                        creditsFormatted: svc.credits.toLocaleString(),
+                        serviceCredits: svc.credits.toLocaleString(),
                         queries: svc.queryCount.toLocaleString(), 
                         insights: getInsightCount(svc.account, 'Services', svc.type)
                     }));
@@ -149,14 +149,14 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         totalRaw: acc.tokens,
                         computeRaw: Math.round(acc.tokens * 0.82),
                         storageRaw: Math.round(acc.tokens * 0.12),
-                        serviceRaw: Math.round(acc.tokens * 0.06),
+                        serviceCreditsRaw: Math.round(acc.tokens * 0.06),
                         workloadsRaw: acc.warehousesCount,
                         usersRaw: acc.usersCount,
                         queriesRaw: parseInt(acc.queriesCount.replace('K', '')) * 1000,
                         total: formatK(acc.tokens),
                         compute: formatK(Math.round(acc.tokens * 0.82)),
                         storage: formatK(Math.round(acc.tokens * 0.12)), 
-                        service: formatK(Math.round(acc.tokens * 0.06)),
+                        serviceCredits: formatK(Math.round(acc.tokens * 0.06)),
                         workloads: acc.warehousesCount.toString(),
                         users: acc.usersCount.toString(),
                         queries: acc.queriesCount,
@@ -197,7 +197,6 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         };
                     });
                 case 'Cortex':
-                    // Grouping Cortex model data by account to show count and aggregated tokens/credits
                     return [
                         {
                             id: 'c-1',
@@ -283,7 +282,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 case 'Cortex': return ['Account name', 'Model count', 'Tokens', 'Credits', 'Insights'];
                 case 'User': return ['Account name', 'User count', 'Queries', 'Insights'];
                 case 'Queries': return ['Account name', 'Queries count', 'Total credits', 'Insights'];
-                case 'Workloads': return ['Account name', 'Workloads', 'Workload credits', 'Insights'];
+                case 'Workloads': return ['Account name', 'Workloads', 'Service credits', 'Insights'];
                 case 'Services': return ['Account name', 'Service credits', 'Services used', 'Insights'];
                 default: return ['Account name', 'Total credits', 'Insights'];
             }
@@ -335,7 +334,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 return [
                     { label: 'Total tokens', value: '12.4M' },
                     { label: 'Cortex credits', value: '1.5K' },
-                    { label: 'Active models', value: '6' }
+                    { label: 'Total models', value: '6' }
                 ];
             case 'User':
                 return [
@@ -475,14 +474,13 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                         const valKey = (() => {
                                             if (h === 'Total credits') return 'total';
                                             if (h === 'Compute credits') return 'compute';
-                                            if (h === 'Storage credits') return 'total';
-                                            if (h === 'Service credits') return 'creditsFormatted';
+                                            if (h === 'Storage credits') return 'storage';
+                                            if (h === 'Service credits') return 'serviceCredits';
                                             if (h === 'Workloads') return 'workloads';
                                             if (h === 'Warehouses') return 'workloads';
                                             if (h === 'Users') return 'users';
                                             if (h === 'Queries') return 'queries';
                                             
-                                            if (h === 'Workload credits') return 'creditsFormatted';
                                             if (h === 'Credits') return 'credits';
                                             if (h === 'Trend %') return 'trend';
                                             if (h === 'Volume') return 'volume';

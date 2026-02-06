@@ -63,7 +63,6 @@ const AccountServicesView: React.FC<AccountServicesViewProps> = ({ accountName, 
             <div className="flex flex-wrap items-center gap-3 overflow-x-auto no-scrollbar pb-1">
                 <KPILabel label="Active Services" value={globalMetrics.active} />
                 <KPILabel label="Total Spend" value={`${globalMetrics.credits} cr`} />
-                <KPILabel label="Services Tracked" value={globalMetrics.total} />
             </div>
 
             <div className="bg-white rounded-[12px] border border-border-light shadow-sm overflow-hidden flex flex-col flex-grow min-h-0">
@@ -87,8 +86,6 @@ const AccountServicesView: React.FC<AccountServicesViewProps> = ({ accountName, 
                                 <th className="px-6 py-4 border-b border-border-light">Service type</th>
                                 <th className="px-6 py-4 border-b border-border-light">Credits</th>
                                 <th className="px-6 py-4 border-b border-border-light">Queries/Events</th>
-                                <th className="px-6 py-4 border-b border-border-light">Trend</th>
-                                <th className="px-6 py-4 border-b border-border-light">Status</th>
                                 <th className="px-6 py-4 border-b border-border-light text-right">Insights</th>
                             </tr>
                         </thead>
@@ -108,16 +105,6 @@ const AccountServicesView: React.FC<AccountServicesViewProps> = ({ accountName, 
                                     </td>
                                     <td className="px-6 py-5">
                                         <span className="text-sm font-medium text-text-secondary">{row.queries.toLocaleString()}</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className={`text-xs font-bold ${row.trend.includes('↑') ? 'text-status-error' : row.trend.includes('↓') ? 'text-status-success' : 'text-text-muted'}`}>
-                                            {row.trend}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${row.status === 'Active' ? 'bg-status-success-light text-status-success-dark' : 'bg-gray-100 text-text-muted'}`}>
-                                            {row.status}
-                                        </span>
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center justify-end gap-3">

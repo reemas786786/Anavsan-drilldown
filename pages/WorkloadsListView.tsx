@@ -21,30 +21,27 @@ const WorkloadsListView: React.FC<WorkloadsListViewProps> = ({ accountName, onNa
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    // Mock data expansion for a single account view
+    // Standardized workloads data with requested types
     const localWorkloads = useMemo(() => [
-        { id: 'w-1', name: 'Production ETL', warehouse: 'ETL_WH', credits: 42500, queries: 12400, runtime: '4.2s', idle: '8%', type: 'Ingestion' },
-        { id: 'w-2', name: 'Executive BI Dashboards', warehouse: 'ANALYTICS_WH', credits: 12400, queries: 45000, runtime: '1.8s', idle: '12%', type: 'Reporting' },
-        { id: 'w-3', name: 'ML Training Pipeline', warehouse: 'ML_WH', credits: 3500, queries: 80, runtime: '150.4s', idle: '24%', type: 'Data Science' },
-        { id: 'w-4', name: 'Ad-hoc Data Discovery', warehouse: 'COMPUTE_WH', credits: 2100, queries: 1200, runtime: '6.5s', idle: '42%', type: 'Exploration' },
-        { id: 'w-5', name: 'Nightly Sync Jobs', warehouse: 'LOAD_WH', credits: 1800, queries: 800, runtime: '8.2s', idle: '15%', type: 'Integration' },
+        { id: 'w-1', name: 'Production ETL Pipeline', credits: 42500, type: 'ETL' },
+        { id: 'w-2', name: 'Executive BI Reporting', credits: 12400, type: 'BI' },
+        { id: 'w-3', name: 'ML Model Training', credits: 3500, type: 'ML' },
+        { id: 'w-4', name: 'Customer Facing API', credits: 2100, type: 'API' },
+        { id: 'w-5', name: 'S3 Raw Ingestion', credits: 1800, type: 'Ingestion' },
     ], []);
 
     const filteredWorkloads = useMemo(() => {
         return localWorkloads.filter(w => 
             w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            w.warehouse.toLowerCase().includes(searchTerm.toLowerCase())
+            w.type.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [searchTerm, localWorkloads]);
 
     const globalMetrics = useMemo(() => {
         const totalCredits = filteredWorkloads.reduce((sum, w) => sum + w.credits, 0);
-        const totalQueries = filteredWorkloads.reduce((sum, w) => sum + w.queries, 0);
         return {
             total: filteredWorkloads.length.toString(),
-            credits: totalCredits.toLocaleString(),
-            queries: (totalQueries / 1000).toFixed(1) + 'K',
-            avgIdle: '16%'
+            credits: totalCredits.toLocaleString()
         };
     }, [filteredWorkloads]);
 
@@ -65,12 +62,10 @@ const WorkloadsListView: React.FC<WorkloadsListViewProps> = ({ accountName, onNa
             <div className="flex flex-wrap items-center gap-3 overflow-x-auto no-scrollbar pb-1">
                 <KPILabel label="Active Workloads" value={globalMetrics.total} />
                 <KPILabel label="Total Spend" value={`${globalMetrics.credits} cr`} />
-                <KPILabel label="Total Queries" value={globalMetrics.queries} />
-                <KPILabel label="Avg. Efficiency" value="84%" />
             </div>
 
             <div className="bg-white rounded-[12px] border border-border-light shadow-sm overflow-hidden flex flex-col flex-grow min-h-0">
-                <div className="px-6 py-4 flex justify-between items-center border-b border-border-light bg-white flex-shrink-0">
+                <div className="px-6 py-4 flex justify-end items-center border-b border-border-light bg-white flex-shrink-0">
                     <div className="relative">
                         <IconSearch className="w-4 h-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
                         <input 
@@ -88,12 +83,8 @@ const WorkloadsListView: React.FC<WorkloadsListViewProps> = ({ accountName, onNa
                         <thead className="bg-[#F8F9FA] sticky top-0 z-10 font-bold uppercase tracking-widest text-[10px] text-text-muted">
                             <tr>
                                 <th className="px-6 py-4 border-b border-border-light">Workload name</th>
-                                <th className="px-6 py-4 border-b border-border-light">Warehouse</th>
                                 <th className="px-6 py-4 border-b border-border-light">Type</th>
                                 <th className="px-6 py-4 border-b border-border-light">Credits</th>
-                                <th className="px-6 py-4 border-b border-border-light">Queries</th>
-                                <th className="px-6 py-4 border-b border-border-light">Avg. Runtime</th>
-                                <th className="px-6 py-4 border-b border-border-light">Idle %</th>
                                 <th className="px-6 py-4 border-b border-border-light text-right">Insights</th>
                             </tr>
                         </thead>
@@ -104,22 +95,12 @@ const WorkloadsListView: React.FC<WorkloadsListViewProps> = ({ accountName, onNa
                                         <span className="text-sm font-bold text-text-strong">{row.name}</span>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <span className="text-xs font-bold text-link cursor-pointer hover:underline">{row.warehouse}</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-[10px] font-black uppercase text-text-muted bg-surface-nested px-2 py-1 rounded border border-border-light">{row.type}</span>
+                                        <span className="text-[10px] font-black uppercase text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 tracking-wider">
+                                            {row.type}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-5">
                                         <span className="text-sm font-black text-text-strong">{row.credits.toLocaleString()}</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-sm font-medium text-text-secondary">{row.queries.toLocaleString()}</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-sm font-medium text-text-secondary">{row.runtime}</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className={`text-sm font-bold ${parseInt(row.idle) > 20 ? 'text-status-warning' : 'text-text-primary'}`}>{row.idle}</span>
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center justify-end gap-3">
