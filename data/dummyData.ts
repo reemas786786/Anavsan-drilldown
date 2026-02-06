@@ -1,3 +1,4 @@
+
 import { 
     Account, DashboardItem, SQLFile, TopQuery, OptimizationOpportunity, Warehouse, User, Widget, 
     SimilarQuery, QueryListItem, QueryStatus, QueryType, QuerySeverity, StorageBreakdownItem, 
@@ -64,7 +65,102 @@ export const usersData: User[] = [
     { id: 'u-1', name: 'FinOps Admin', email: 'finops@mail.com', role: 'Admin', status: 'Active', dateAdded: '2023-01-01', cost: 1200, tokens: 5000 },
 ];
 export const dashboardsData: DashboardItem[] = [];
-export const assignedQueriesData: AssignedQuery[] = [];
+
+export const assignedQueriesData: AssignedQuery[] = [
+    {
+        id: 'aq-1',
+        queryId: 'Production ETL Spike',
+        queryText: 'SELECT * FROM FACT_SALES WHERE EVENT_DATE >= "2023-01-01" AND STATUS = "COMPLETED"',
+        assignedBy: 'FinOps Admin',
+        assignedTo: 'Data Engineer',
+        priority: 'High',
+        status: 'In progress',
+        message: 'This query is showing a massive spike in warehouse credits. Please optimize the partition filters.',
+        assignedOn: '2024-02-05T10:00:00Z',
+        cost: 44.19,
+        tokens: 15.2,
+        credits: 44.19,
+        warehouse: 'COMPUTE_WH',
+        history: [
+            { id: 'h-1', type: 'system', author: 'FinOps Admin', timestamp: '2024-02-05T10:00:00Z', content: 'Task assigned to Data Engineer' }
+        ]
+    },
+    {
+        id: 'aq-2',
+        queryId: 'Tableau BI Latency',
+        queryText: 'SELECT CUSTOMER_NAME, SUM(TOTAL_AMOUNT) FROM ORDERS GROUP BY 1 ORDER BY 2 DESC',
+        assignedBy: 'FinOps Admin',
+        assignedTo: 'Data Analyst',
+        priority: 'Medium',
+        status: 'Assigned',
+        message: 'The executive dashboard is loading slowly due to this aggregation. Can we pre-aggregate this data?',
+        assignedOn: '2024-02-06T14:30:00Z',
+        cost: 12.50,
+        tokens: 4.8,
+        credits: 12.50,
+        warehouse: 'ANALYTICS_WH',
+        history: [
+            { id: 'h-2', type: 'system', author: 'FinOps Admin', timestamp: '2024-02-06T14:30:00Z', content: 'Task assigned to Data Analyst' }
+        ]
+    },
+    {
+        id: 'aq-3',
+        queryId: 'Monthly Report Cleanup',
+        queryText: 'DELETE FROM STG_EVENTS WHERE PROCESSED_AT < CURRENT_DATE() - 30',
+        assignedBy: 'FinOps Admin',
+        assignedTo: 'Junior Dev',
+        priority: 'Low',
+        status: 'Optimized',
+        message: 'Cleanup job is taking 30 minutes. Let\'s optimize the deletion pattern.',
+        assignedOn: '2024-02-01T09:15:00Z',
+        cost: 8.20,
+        tokens: 3.1,
+        credits: 8.20,
+        warehouse: 'ETL_WH',
+        engineerResponse: 'Optimized by processing in smaller batches to avoid transaction log pressure.',
+        history: [
+            { id: 'h-3', type: 'system', author: 'FinOps Admin', timestamp: '2024-02-01T09:15:00Z', content: 'Task assigned' },
+            { id: 'h-4', type: 'comment', author: 'Junior Dev', timestamp: '2024-02-02T11:00:00Z', content: 'Working on refactoring the delete script.' }
+        ]
+    },
+    {
+        id: 'aq-4',
+        queryId: 'Log Ingestion Optimization',
+        queryText: 'INSERT INTO LOGS_ARCHIVE SELECT * FROM LOGS_STAGING',
+        assignedBy: 'FinOps Admin',
+        assignedTo: 'Data Engineer',
+        priority: 'High',
+        status: 'Needs clarification',
+        message: 'Ingestion is failing during peak hours. Verify if we can use Snowpipe.',
+        assignedOn: '2024-02-04T16:45:00Z',
+        cost: 156.40,
+        tokens: 52.5,
+        credits: 156.40,
+        warehouse: 'LOAD_WH',
+        history: [
+            { id: 'h-5', type: 'system', author: 'FinOps Admin', timestamp: '2024-02-04T16:45:00Z', content: 'Task assigned' }
+        ]
+    },
+    {
+        id: 'aq-5',
+        queryId: 'Inventory Sync Issue',
+        queryText: 'UPDATE INVENTORY SET STOCK = STOCK - 1 WHERE SKU_ID = ?',
+        assignedBy: 'FinOps Admin',
+        assignedTo: 'Backend Lead',
+        priority: 'Medium',
+        status: 'Assigned',
+        message: 'Row-by-row updates are expensive. Can we switch to a merge operation?',
+        assignedOn: '2024-02-06T11:20:00Z',
+        cost: 22.10,
+        tokens: 8.4,
+        credits: 22.10,
+        warehouse: 'TRANSFORM_WH',
+        history: [
+            { id: 'h-6', type: 'system', author: 'FinOps Admin', timestamp: '2024-02-06T11:20:00Z', content: 'Task assigned' }
+        ]
+    }
+];
+
 export const pullRequestsData: PullRequest[] = [];
 export const notificationsData: Notification[] = [];
 export const activityLogsData: ActivityLog[] = [];

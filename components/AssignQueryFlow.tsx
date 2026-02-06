@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { QueryListItem, User, AssignmentPriority } from '../types';
 
@@ -27,8 +26,9 @@ const AssignQueryFlow: React.FC<AssignQueryFlowProps> = ({ query, users, onCance
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-sans">
-            <div className="p-8 space-y-10 flex-grow">
+        <div className="flex flex-col h-full bg-white font-sans min-h-0 overflow-hidden">
+            {/* Scrollable Content Area */}
+            <div className="p-8 space-y-10 flex-grow overflow-y-auto no-scrollbar">
                 {/* Section: Assign Query */}
                 <div className="space-y-4">
                     <div className="space-y-1">
@@ -102,7 +102,7 @@ const AssignQueryFlow: React.FC<AssignQueryFlowProps> = ({ query, users, onCance
                 </div>
             </div>
 
-            {/* Footer */}
+            {/* Pinned Footer */}
             <div className="p-8 bg-[#F9F7FE] border-t border-border-light flex justify-end items-center gap-8 flex-shrink-0">
                 <button 
                     onClick={onCancel} 

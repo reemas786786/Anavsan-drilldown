@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { User } from '../types';
-import { IconUser, IconLockClosed, IconBell, IconPhoto, IconEdit, IconChevronLeft, IconChevronRight, IconAdjustments, IconCreditCard } from '../constants';
+import { IconUser, IconLockClosed, IconBell, IconPhoto, IconEdit, IconChevronLeft, IconChevronRight, IconAdjustments, IconCreditCard, IconCheck, IconCheckCircle } from '../constants';
 
 const IconEye: React.FC<{className?: string}> = ({className}) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -16,11 +15,11 @@ const IconEyeOff: React.FC<{className?: string}> = ({className}) => (
     </svg>
 );
 
-const PasswordInput: React.FC<{ label: string, id: string, value: string, name: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }> = ({ label, id, value, name, onChange }) => {
+const PasswordInput: React.FC<{ label: string, id: string, value: string, name: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder?: string }> = ({ label, id, value, name, onChange, placeholder }) => {
     const [isVisible, setIsVisible] = useState(false);
     return (
-        <div>
-            <label htmlFor={id} className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+        <div className="space-y-1.5">
+            <label htmlFor={id} className="block text-[11px] font-black text-text-muted uppercase tracking-widest ml-1">{label}</label>
             <div className="relative">
                 <input
                     id={id}
@@ -28,7 +27,8 @@ const PasswordInput: React.FC<{ label: string, id: string, value: string, name: 
                     type={isVisible ? 'text' : 'password'}
                     value={value}
                     onChange={onChange}
-                    className="w-full bg-surface-nested border-transparent rounded-full px-4 py-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary placeholder-text-secondary"
+                    placeholder={placeholder}
+                    className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary placeholder-text-muted/50 shadow-sm"
                 />
                 <button
                     type="button"
@@ -36,48 +36,119 @@ const PasswordInput: React.FC<{ label: string, id: string, value: string, name: 
                     className="absolute inset-y-0 right-0 px-4 flex items-center text-text-muted hover:text-text-primary"
                     aria-label={isVisible ? 'Hide password' : 'Show password'}
                 >
-                    {isVisible ? <IconEyeOff /> : <IconEye />}
+                    {isVisible ? <IconEyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
                 </button>
             </div>
         </div>
     );
 };
 
-const UserInformationSection: React.FC<{ user: User }> = ({ user }) => (
-    <div>
-        <h2 className="text-2xl font-bold text-text-strong mb-6">User information</h2>
-        <div className="bg-surface p-8 rounded-2xl border border-border-light shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary">First name</label>
-                    <p className="mt-1 text-text-primary font-semibold">{user.name.split(' ')[0]}</p>
+const UserInformationSection: React.FC<{ user: User }> = ({ user }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        firstName: user.name.split(' ')[0],
+        lastName: user.name.split(' ').slice(1).join(' '),
+        organization: user.organization || '',
+        email: user.email
+    });
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSave = () => {
+        setIsSaving(true);
+        setTimeout(() => {
+            setIsSaving(false);
+            setIsEditing(false);
+        }, 800);
+    };
+
+    return (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="bg-surface p-8 rounded-[24px] border border-border-light shadow-sm">
+                <div className="flex justify-between items-start mb-8">
+                    <h2 className="text-xl font-black text-text-strong uppercase tracking-widest">Personal Information</h2>
+                    {!isEditing && (
+                        <button 
+                            onClick={() => setIsEditing(true)}
+                            className="text-xs font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1.5"
+                        >
+                            <IconEdit className="h-3.5 w-3.5" />
+                            Edit details
+                        </button>
+                    )}
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary">Last name</label>
-                    <p className="mt-1 text-text-primary font-semibold">{user.name.split(' ').slice(1).join(' ')}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                    <div className="space-y-1.5">
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest ml-1">First name</label>
+                        {isEditing ? (
+                            <input 
+                                value={formData.firstName}
+                                onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                                className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3 text-sm focus:ring-1 focus:ring-primary"
+                            />
+                        ) : (
+                            <p className="text-sm text-text-primary font-bold px-1">{formData.firstName}</p>
+                        )}
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest ml-1">Last name</label>
+                        {isEditing ? (
+                            <input 
+                                value={formData.lastName}
+                                onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                                className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3 text-sm focus:ring-1 focus:ring-primary"
+                            />
+                        ) : (
+                            <p className="text-sm text-text-primary font-bold px-1">{formData.lastName}</p>
+                        )}
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest ml-1">Organization</label>
+                        {isEditing ? (
+                            <input 
+                                value={formData.organization}
+                                onChange={(e) => setFormData({...formData, organization: e.target.value})}
+                                className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3 text-sm focus:ring-1 focus:ring-primary"
+                            />
+                        ) : (
+                            <p className="text-sm text-text-primary font-bold px-1">{formData.organization || 'Not set'}</p>
+                        )}
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest ml-1">Email</label>
+                        {isEditing ? (
+                            <input 
+                                value={formData.email}
+                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3 text-sm focus:ring-1 focus:ring-primary"
+                            />
+                        ) : (
+                            <p className="text-sm text-text-primary font-bold px-1">{formData.email}</p>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary">Organization</label>
-                    <p className="mt-1 text-text-primary font-semibold">{user.organization || 'Not set'}</p>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary">Email</label>
-                    <p className="mt-1 text-text-primary font-semibold">{user.email}</p>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary">Role</label>
-                    <p className="mt-1 text-text-primary font-semibold">{user.role}</p>
-                </div>
-            </div>
-            <div className="mt-8 pt-6 border-t border-border-light flex justify-end">
-                <button className="bg-button-secondary-bg text-primary font-semibold px-4 py-2 rounded-full flex items-center gap-2 hover:bg-button-secondary-bg-hover transition-colors">
-                    <IconEdit className="h-4 w-4" />
-                    Edit details
-                </button>
+
+                {isEditing && (
+                    <div className="mt-12 pt-8 border-t border-border-light flex justify-end gap-4">
+                        <button 
+                            onClick={() => setIsEditing(false)}
+                            className="text-xs font-black text-text-secondary uppercase tracking-widest px-6 py-3 hover:text-text-strong transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="bg-primary text-white font-black px-10 py-3 rounded-full hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 text-xs uppercase tracking-widest flex items-center gap-2"
+                        >
+                            {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Save Changes'}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const BillingInformationSection: React.FC = () => {
     const [billingInfo, setBillingInfo] = useState({
@@ -88,37 +159,54 @@ const BillingInformationSection: React.FC = () => {
         postalCode: '10101',
         country: 'United States'
     });
+    const [isSaving, setIsSaving] = useState(false);
+    const [showSaved, setShowSaved] = useState(false);
 
     const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setBillingInfo({ ...billingInfo, [e.target.name]: e.target.value });
     };
 
+    const handleSave = () => {
+        setIsSaving(true);
+        setTimeout(() => {
+            setIsSaving(false);
+            setShowSaved(true);
+            setTimeout(() => setShowSaved(false), 3000);
+        }, 1000);
+    };
+
     return (
-        <div>
-            <h2 className="text-2xl font-bold text-text-strong mb-6">Billing Information</h2>
-            <div className="bg-surface p-8 rounded-2xl border border-border-light shadow-sm">
-                <p className="text-sm text-text-secondary mb-8">These details will be used for all future invoices.</p>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="bg-surface p-8 rounded-[24px] border border-border-light shadow-sm">
+                <h2 className="text-xl font-black text-text-strong uppercase tracking-widest mb-2">Billing details</h2>
+                <p className="text-sm text-text-secondary mb-8">These details will be used for all future invoices and tax compliance.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div className="col-span-2">
-                        <label className="block text-sm font-medium text-text-secondary mb-1">Company Name</label>
-                        <input name="companyName" value={billingInfo.companyName} onChange={handleInfoChange} className="w-full bg-surface-nested border-transparent rounded-full px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary" />
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest mb-1.5 ml-1">Company Name</label>
+                        <input name="companyName" value={billingInfo.companyName} onChange={handleInfoChange} className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3.5 text-sm focus:ring-1 focus:ring-primary shadow-sm" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-text-secondary mb-1">VAT / Tax ID</label>
-                        <input name="vatId" value={billingInfo.vatId} onChange={handleInfoChange} className="w-full bg-surface-nested border-transparent rounded-full px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary" />
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest mb-1.5 ml-1">VAT / Tax ID</label>
+                        <input name="vatId" value={billingInfo.vatId} onChange={handleInfoChange} className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3.5 text-sm focus:ring-1 focus:ring-primary shadow-sm" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-text-secondary mb-1">Country</label>
-                        <input name="country" value={billingInfo.country} onChange={handleInfoChange} className="w-full bg-surface-nested border-transparent rounded-full px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary" />
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest mb-1.5 ml-1">Country</label>
+                        <input name="country" value={billingInfo.country} onChange={handleInfoChange} className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3.5 text-sm focus:ring-1 focus:ring-primary shadow-sm" />
                     </div>
                     <div className="col-span-2">
-                        <label className="block text-sm font-medium text-text-secondary mb-1">Billing Address</label>
-                        <input name="address" value={billingInfo.address} onChange={handleInfoChange} className="w-full bg-surface-nested border-transparent rounded-full px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary" />
+                        <label className="block text-[11px] font-black text-text-muted uppercase tracking-widest mb-1.5 ml-1">Billing Address</label>
+                        <input name="address" value={billingInfo.address} onChange={handleInfoChange} className="w-full bg-surface-nested border border-border-light rounded-2xl px-5 py-3.5 text-sm focus:ring-1 focus:ring-primary shadow-sm" />
                     </div>
                 </div>
-                <div className="mt-8 pt-6 border-t border-border-light flex justify-end">
-                    <button className="bg-primary text-white font-semibold px-8 py-2.5 rounded-full hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
-                        Save Billing Details
+                <div className="mt-12 pt-8 border-t border-border-light flex justify-end">
+                    <button 
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className={`font-black px-10 py-3 rounded-full transition-all shadow-lg text-xs uppercase tracking-widest flex items-center gap-2 ${
+                            showSaved ? 'bg-status-success text-white' : 'bg-primary text-white hover:bg-primary-hover shadow-primary/20'
+                        }`}
+                    >
+                        {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : showSaved ? <><IconCheckCircle className="h-4 w-4" /> Saved</> : 'Save Billing Details'}
                     </button>
                 </div>
             </div>
@@ -132,29 +220,50 @@ const ChangePasswordSection: React.FC = () => {
         new: '',
         confirm: '',
     });
+    const [isSaving, setIsSaving] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPasswords(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
+    const handleUpdate = () => {
+        if (!passwords.current || !passwords.new || !passwords.confirm) return;
+        if (passwords.new !== passwords.confirm) {
+            alert("Passwords don't match");
+            return;
+        }
+
+        setIsSaving(true);
+        setTimeout(() => {
+            setIsSaving(false);
+            setStatus('success');
+            setPasswords({ current: '', new: '', confirm: '' });
+            setTimeout(() => setStatus('idle'), 4000);
+        }, 1200);
+    };
+
     return (
-        <div>
-            <h2 className="text-2xl font-bold text-text-strong mb-6">Change Password</h2>
-            <div className="bg-surface p-8 rounded-2xl border border-border-light shadow-sm">
-                <div className="max-w-md mx-auto space-y-6">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="bg-surface p-8 rounded-[24px] border border-border-light shadow-sm">
+                <h2 className="text-xl font-black text-text-strong uppercase tracking-widest mb-8">Security & Access</h2>
+                <div className="max-w-md space-y-6">
                     <PasswordInput
                         id="current-password"
                         name="current"
                         label="Current password"
                         value={passwords.current}
                         onChange={handleChange}
+                        placeholder="••••••••"
                     />
+                    <div className="h-px bg-border-light my-2"></div>
                     <PasswordInput
                         id="new-password"
                         name="new"
                         label="New password"
                         value={passwords.new}
                         onChange={handleChange}
+                        placeholder="Enter new password"
                     />
                     <PasswordInput
                         id="confirm-new-password"
@@ -162,11 +271,22 @@ const ChangePasswordSection: React.FC = () => {
                         label="Confirm new password"
                         value={passwords.confirm}
                         onChange={handleChange}
+                        placeholder="Repeat new password"
                     />
                 </div>
-                <div className="mt-8 pt-6 border-t border-border-light flex justify-end">
-                    <button className="bg-button-secondary-bg text-primary font-semibold px-6 py-2 rounded-full hover:bg-button-secondary-bg-hover transition-colors">
-                        Update Password
+                <div className="mt-12 pt-8 border-t border-border-light flex justify-end items-center gap-6">
+                    {status === 'success' && (
+                        <p className="text-sm font-bold text-status-success-dark flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
+                            <IconCheckCircle className="h-4 w-4" />
+                            Password updated successfully
+                        </p>
+                    )}
+                    <button 
+                        onClick={handleUpdate}
+                        disabled={isSaving || !passwords.current}
+                        className="bg-primary text-white font-black px-10 py-3 rounded-full hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 text-xs uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+                    >
+                         {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Update Password'}
                     </button>
                 </div>
             </div>
@@ -176,7 +296,9 @@ const ChangePasswordSection: React.FC = () => {
 
 const BrandSettingsSection: React.FC = () => {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
-    const [brandColor, setBrandColor] = useState('#6932D5'); // Default primary color
+    const [brandColor, setBrandColor] = useState('#6932D5');
+    const [isSaving, setIsSaving] = useState(false);
+    const [showApplied, setShowApplied] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,24 +312,33 @@ const BrandSettingsSection: React.FC = () => {
         }
     };
 
+    const handleApply = () => {
+        setIsSaving(true);
+        setTimeout(() => {
+            setIsSaving(false);
+            setShowApplied(true);
+            setTimeout(() => setShowApplied(false), 2500);
+        }, 900);
+    }
+
     return (
-        <div>
-            <h2 className="text-2xl font-bold text-text-strong mb-6">Brand settings</h2>
-            <div className="bg-surface p-8 rounded-2xl border border-border-light shadow-sm">
-                <div className="space-y-8">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="bg-surface p-8 rounded-[24px] border border-border-light shadow-sm">
+                <h2 className="text-xl font-black text-text-strong uppercase tracking-widest mb-8">Custom Branding</h2>
+                <div className="space-y-12">
                     {/* Logo Section */}
                     <div>
-                        <h3 className="text-lg font-semibold text-text-primary">Company Logo</h3>
-                        <p className="text-sm text-text-secondary mt-1">This logo will be displayed in the header for all users. SVG, PNG, or JPG recommended.</p>
-                        <div className="mt-4 flex items-center gap-6">
-                            <div className="w-48 h-16 bg-surface-nested rounded-lg flex items-center justify-center border border-border-color">
+                        <h3 className="text-base font-bold text-text-strong">Company Logo</h3>
+                        <p className="text-sm text-text-secondary mt-1 font-medium">This logo will be displayed in the header for all users. SVG, PNG, or JPG recommended.</p>
+                        <div className="mt-6 flex items-center gap-8">
+                            <div className="w-56 h-20 bg-surface-nested rounded-2xl flex items-center justify-center border border-border-light shadow-inner">
                                 {logoPreview ? (
-                                    <img src={logoPreview} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                                    <img src={logoPreview} alt="Logo Preview" className="max-w-[80%] max-h-[80%] object-contain" />
                                 ) : (
-                                    <span className="text-sm text-text-muted">Logo preview</span>
+                                    <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">Logo preview</span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                                 <input
                                     type="file"
                                     ref={fileInputRef}
@@ -217,14 +348,14 @@ const BrandSettingsSection: React.FC = () => {
                                 />
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="bg-button-secondary-bg text-primary font-semibold px-4 py-2 rounded-full text-sm hover:bg-button-secondary-bg-hover transition-colors"
+                                    className="bg-white border border-border-color text-text-strong font-black px-6 py-2.5 rounded-full text-xs uppercase tracking-widest hover:bg-surface-nested transition-all shadow-sm"
                                 >
                                     Upload logo
                                 </button>
                                 {logoPreview && (
                                      <button
                                         onClick={() => setLogoPreview(null)}
-                                        className="text-text-secondary font-semibold px-4 py-2 rounded-full text-sm hover:bg-surface-hover transition-colors"
+                                        className="text-text-muted font-black px-4 py-2 rounded-full text-[10px] uppercase tracking-widest hover:text-status-error transition-all"
                                     >
                                         Remove
                                     </button>
@@ -235,19 +366,19 @@ const BrandSettingsSection: React.FC = () => {
 
                     {/* Brand Color Section */}
                     <div>
-                         <h3 className="text-lg font-semibold text-text-primary">Brand Color</h3>
-                        <p className="text-sm text-text-secondary mt-1">Choose a primary color for your workspace theme.</p>
-                        <div className="mt-4 flex items-center gap-4">
-                            <div className="relative w-12 h-12">
+                         <h3 className="text-base font-bold text-text-strong">Brand Identity Color</h3>
+                        <p className="text-sm text-text-secondary mt-1 font-medium">Choose a primary color for your workspace theme components.</p>
+                        <div className="mt-6 flex items-center gap-4">
+                            <div className="relative w-14 h-14 group">
                                 <div
-                                    className="absolute inset-0 rounded-full border-4 border-surface pointer-events-none z-10"
+                                    className="absolute inset-0 rounded-2xl border-4 border-white shadow-lg pointer-events-none z-10 group-hover:scale-105 transition-transform"
                                     style={{ backgroundColor: brandColor }}
                                 ></div>
                                  <input
                                     type="color"
                                     value={brandColor}
                                     onChange={(e) => setBrandColor(e.target.value)}
-                                    className="w-full h-full p-0 border-none rounded-full cursor-pointer appearance-none bg-transparent"
+                                    className="w-full h-full p-0 border-none rounded-2xl cursor-pointer appearance-none bg-transparent opacity-0"
                                     title="Select brand color"
                                 />
                             </div>
@@ -255,16 +386,22 @@ const BrandSettingsSection: React.FC = () => {
                                 type="text"
                                 value={brandColor}
                                 onChange={(e) => setBrandColor(e.target.value)}
-                                className="w-40 border border-border-color rounded-full px-4 py-2 text-sm font-mono focus:ring-primary focus:border-primary bg-input-bg"
+                                className="w-44 border border-border-light rounded-full px-5 py-3 text-sm font-mono focus:ring-1 focus:ring-primary shadow-inner bg-surface-nested text-text-strong font-bold"
                                 placeholder="#6932D5"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-border-light flex justify-end">
-                    <button className="bg-primary text-white font-semibold px-6 py-2 rounded-full hover:bg-primary-hover transition-colors">
-                        Save Changes
+                <div className="mt-12 pt-8 border-t border-border-light flex justify-end">
+                    <button 
+                        onClick={handleApply}
+                        disabled={isSaving}
+                        className={`font-black px-10 py-3 rounded-full transition-all shadow-lg text-xs uppercase tracking-widest flex items-center gap-2 ${
+                            showApplied ? 'bg-status-success text-white' : 'bg-primary text-white hover:bg-primary-hover shadow-primary/20'
+                        }`}
+                    >
+                        {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : showApplied ? <><IconCheckCircle className="h-4 w-4" /> Applied</> : 'Apply Changes'}
                     </button>
                 </div>
             </div>
@@ -281,15 +418,13 @@ interface ProfileSettingsPageProps {
 }
 
 
-const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({ user, onBack, theme, onThemeChange, initialSection }) => {
+const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({ user, initialSection }) => {
     const [activeSection, setActiveSection] = useState(initialSection || 'User information');
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     const navItems = [
         { name: 'User information', icon: IconUser },
         { name: 'Billing Information', icon: IconCreditCard },
         { name: 'Change password', icon: IconLockClosed },
-        { name: 'Change theme', icon: IconAdjustments },
         { name: 'Brand settings', icon: IconPhoto },
     ];
 
@@ -298,52 +433,48 @@ const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({ user, onBack,
             case 'User information': return <UserInformationSection user={user} />;
             case 'Billing Information': return <BillingInformationSection />;
             case 'Change password': return <ChangePasswordSection />;
-            case 'Change theme': return <div className="space-y-6"><h2 className="text-2xl font-bold text-text-strong">Change theme</h2><p className="text-sm text-text-secondary">Theme selection has been moved to a unified dashboard setting.</p></div>;
             case 'Brand settings': return <BrandSettingsSection />;
             default: return <UserInformationSection user={user} />;
         }
     };
     
     return (
-        <div className="flex h-full pb-20">
-            <aside className={`bg-surface flex-shrink-0 flex flex-col transition-all duration-300 border-r border-border-light ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}>
-                <nav className="flex-grow p-4">
-                    <ul className="space-y-1">
-                        {navItems.map(item => (
-                            <li key={item.name}>
-                                <button
-                                    onClick={() => setActiveSection(item.name)}
-                                    className={`w-full flex items-center text-left p-3 rounded-xl text-sm transition-colors ${
-                                        activeSection === item.name 
-                                        ? 'bg-[#F0EAFB] text-primary font-semibold' 
-                                        : 'text-text-strong font-medium hover:bg-surface-hover'
-                                    } ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                                    title={isSidebarCollapsed ? item.name : ''}
-                                >
-                                    <item.icon className={`h-5 w-5 shrink-0 ${activeSection === item.name ? 'text-primary' : 'text-text-strong'}`} />
-                                    {!isSidebarCollapsed && <span className="ml-4 whitespace-nowrap">{item.name}</span>}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-                <div className="mt-auto p-4">
-                    <button
-                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                        className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-surface-hover"
-                        title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                    >
-                        {isSidebarCollapsed ? <IconChevronRight className="h-5 w-5 text-text-secondary" /> : <IconChevronLeft className="h-5 w-5 text-text-secondary" />}
-                    </button>
+        <div className="flex flex-col h-full bg-background px-6 pt-4 pb-12 overflow-y-auto no-scrollbar">
+            <div className="max-w-6xl mx-auto w-full space-y-8">
+                {/* Unified Header */}
+                <header className="flex-shrink-0">
+                    <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Profile settings</h1>
+                    <p className="text-sm text-text-secondary font-medium mt-1">Manage your identity, billing preferences, and workspace branding.</p>
+                </header>
+
+                {/* Horizontal Tab Navigation */}
+                <div className="flex border-b border-border-light overflow-x-auto no-scrollbar gap-8">
+                    {navItems.map(item => (
+                        <button
+                            key={item.name}
+                            onClick={() => setActiveSection(item.name)}
+                            className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap flex items-center gap-2.5 ${
+                                activeSection === item.name 
+                                ? 'text-primary font-black' 
+                                : 'text-text-muted hover:text-text-secondary'
+                            }`}
+                        >
+                            <item.icon className={`h-4 w-4 ${activeSection === item.name ? 'text-primary' : 'text-text-muted'}`} />
+                            {item.name}
+                            {activeSection === item.name && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full animate-in fade-in slide-in-from-bottom-1 duration-300" />
+                            )}
+                        </button>
+                    ))}
                 </div>
-            </aside>
-            <main className="flex-1 overflow-y-auto bg-background">
-                <div className="px-6 pt-4 pb-12">
-                    <div className="max-w-4xl space-y-12">
+
+                {/* Content Area */}
+                <main className="min-h-0 pt-4">
+                    <div className="max-w-4xl">
                         {renderSection()}
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     );
 };

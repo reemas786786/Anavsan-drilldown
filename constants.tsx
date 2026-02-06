@@ -243,7 +243,7 @@ export const IconFileText: React.FC<{ className?: string }> = ({ className }) =>
 
 export const IconLightbulb: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-3m0 0a4.5 4.5 0 110-9 4.5 4.5 0 010 9zm0 0v3a2.25 2.25 0 01-2.25 2.25h4.5A2.25 2.25 0 0112 18z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-3m0 0a4.5 4.5 0 110-9 4.5 4.5 0 110 9zm0 0v3a2.25 2.25 0 01-2.25 2.25h4.5A2.25 2.25 0 0112 18z" />
     </svg>
 );
 
@@ -437,10 +437,7 @@ export const accountNavItems = [
     { 
         name: 'Warehouses', 
         icon: IconLayers, 
-        children: [
-            { name: 'Overview', icon: IconSummary },
-            { name: 'All warehouses', icon: IconList }
-        ] 
+        children: [] 
     },
     { 
         name: 'Storage and cost', 
@@ -453,8 +450,6 @@ export const accountNavItems = [
     { 
         name: 'Cortex', 
         icon: IconSparkles, 
-        children: [
-            { name: 'Cortex list', icon: IconList }
-        ] 
+        children: [] 
     },
 ];

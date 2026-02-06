@@ -1,27 +1,21 @@
-
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AssignedQuery, AssignmentStatus, AssignmentPriority, User } from '../types';
 import { 
     IconDotsVertical, 
     IconSearch, 
-    IconAdjustments, 
-    IconClipboardList, 
-    IconChevronDown 
+    IconChevronDown,
+    IconChevronLeft,
+    IconChevronRight,
+    IconClipboardList
 } from '../constants';
 import Pagination from '../components/Pagination';
 import DateRangeDropdown from '../components/DateRangeDropdown';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 
-// --- SUB-COMPONENTS ---
-
-const KPICard: React.FC<{ label: string; value: number | string }> = ({ label, value }) => (
-    <div className="bg-white px-8 py-4 rounded-[16px] border border-border-light shadow-sm min-w-[140px] flex flex-col justify-center gap-1 transition-all hover:border-primary/30 group">
-        <span className="text-[12px] font-bold text-text-muted uppercase tracking-wider group-hover:text-primary transition-colors">
-            {label}:
-        </span>
-        <span className="text-[18px] font-black text-text-strong tracking-tight leading-none">
-            {value}
-        </span>
+const KPILabel: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+    <div className="bg-white px-5 py-2.5 rounded-full border border-border-light shadow-sm flex items-center gap-2 flex-shrink-0 transition-all hover:border-primary/30">
+        <span className="text-[13px] text-text-secondary font-medium whitespace-nowrap">{label}:</span>
+        <span className="text-[13px] font-black text-text-strong whitespace-nowrap">{value}</span>
     </div>
 );
 
@@ -32,7 +26,7 @@ const PriorityBadge: React.FC<{ priority: AssignmentPriority }> = ({ priority })
         High: 'bg-red-50 text-red-700 border-red-200',
     };
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded border uppercase tracking-wider ${colorClasses[priority]}`} title={`${priority} Priority`}>
+        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded border uppercase tracking-wider ${colorClasses[priority]}`}>
             {priority}
         </span>
     );
@@ -46,10 +40,7 @@ const StatusBadge: React.FC<{ status: AssignmentStatus }> = ({ status }) => {
         'Cannot be optimized': 'bg-red-50 text-red-700 border-red-200',
         'Needs clarification': 'bg-purple-50 text-purple-700 border-purple-200',
     };
-    
-    // Mapping for UI consistency with the requested Pending/Resolved naming if necessary
     const displayStatus = status === 'Assigned' ? 'PENDING' : status.toUpperCase();
-    
     return (
         <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded border uppercase tracking-wider ${colorClasses[status] || 'bg-slate-50 text-slate-700 border-slate-200'}`}>
             {displayStatus}
@@ -64,20 +55,24 @@ interface AssignedQueriesProps {
     onResolveQuery: (id: string) => void;
 }
 
-const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, currentUser, onViewQuery, onResolveQuery }) => {
+const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, onViewQuery }) => {
     const [search, setSearch] = useState('');
     const [dateFilter, setDateFilter] = useState<string | { start: string; end: string }>('All');
     const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
+    const [assigneeFilter, setAssigneeFilter] = useState<string[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const stats = useMemo(() => {
+        const total = assignedQueries.length;
+        const pending = assignedQueries.filter(q => ['Assigned', 'In progress'].includes(q.status)).length;
+        const high = assignedQueries.filter(q => q.priority === 'High').length;
+
         return {
-            total: assignedQueries.length,
-            high: assignedQueries.filter(q => q.priority === 'High').length,
-            medium: assignedQueries.filter(q => q.priority === 'Medium').length,
-            low: assignedQueries.filter(q => q.priority === 'Low').length,
+            total: total.toString(),
+            pending: pending.toString(),
+            high: high.toString()
         };
     }, [assignedQueries]);
 
@@ -91,131 +86,137 @@ const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, curr
 
             if (priorityFilter.length > 0 && !priorityFilter.includes(q.priority)) return false;
             if (statusFilter.length > 0 && !statusFilter.includes(q.status)) return false;
+            if (assigneeFilter.length > 0 && !assigneeFilter.includes(q.assignedTo)) return false;
 
             return true;
         });
-    }, [assignedQueries, search, priorityFilter, statusFilter]);
+    }, [assignedQueries, search, priorityFilter, statusFilter, assigneeFilter]);
 
     const totalPages = Math.ceil(filteredQueries.length / itemsPerPage);
     const paginatedData = filteredQueries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+    const assigneeOptions = useMemo(() => [...new Set(assignedQueries.map(q => q.assignedTo))], [assignedQueries]);
+
     return (
-        <div className="flex flex-col h-full bg-background px-6 pt-4 pb-12 space-y-6">
-            <header className="flex-shrink-0">
-                <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Assigned Queries</h1>
-                <p className="text-sm text-text-secondary mt-1">Track queries that have been assigned to you or by you for optimization.</p>
+        <div className="flex flex-col h-full bg-background px-6 pt-4 pb-12 overflow-y-auto no-scrollbar">
+            <header className="flex-shrink-0 mb-8">
+                <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Assigned queries</h1>
+                <p className="text-sm text-text-secondary font-medium mt-1">Track queries that have been assigned to you or by you for optimization.</p>
             </header>
 
-            {/* Filter Bar Row: Added relative z-20 and ensure overflow-visible for dropdowns */}
-            <div className="px-6 py-2 flex flex-wrap items-center justify-between whitespace-nowrap text-[13px] text-text-secondary relative z-20 overflow-visible bg-background rounded-lg border border-border-light">
-                <div className="flex items-center gap-8">
-                    <DateRangeDropdown selectedValue={dateFilter} onChange={setDateFilter} />
-                    
-                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
-                    
-                    <div className="flex items-center gap-3">
-                        <span className="text-text-muted font-medium">Priority:</span>
-                        <MultiSelectDropdown 
-                            label="All" 
-                            options={['Low', 'Medium', 'High']} 
-                            selectedOptions={priorityFilter} 
-                            onChange={setPriorityFilter} 
-                            selectionMode="single"
-                            layout="inline"
-                        />
-                    </div>
-
-                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="text-text-muted font-medium">Status:</span>
-                        <MultiSelectDropdown 
-                            label="All" 
-                            options={['Assigned', 'In progress', 'Optimized', 'Cannot be optimized', 'Needs clarification']} 
-                            selectedOptions={statusFilter} 
-                            onChange={setStatusFilter} 
-                            selectionMode="single"
-                            layout="inline"
-                        />
-                    </div>
-
-                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="text-text-muted font-medium">Assignee:</span>
-                        <MultiSelectDropdown 
-                            label="All" 
-                            options={[...new Set(assignedQueries.map(q => q.assignedTo))]} 
-                            selectedOptions={[]} 
-                            onChange={() => {}} 
-                            selectionMode="single"
-                            layout="inline"
-                        />
-                    </div>
-                </div>
-
-                <div className="relative w-72 mt-2 lg:mt-0">
-                    <IconSearch className="w-4 h-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
-                    <input 
-                        type="search" 
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search query or message..."
-                        className="w-full bg-[#F2F4F7] border-none rounded-lg py-2 pl-4 pr-10 text-[13px] font-medium focus:ring-1 focus:ring-primary placeholder:text-text-muted"
-                    />
-                </div>
+            {/* KPI Pills - Matching Resource Summary */}
+            <div className="flex flex-wrap items-center gap-3 mb-8 overflow-x-auto no-scrollbar flex-shrink-0">
+                <KPILabel label="Total Tasks" value={stats.total} />
+                <KPILabel label="Pending Optimization" value={stats.pending} />
+                <KPILabel label="High Priority" value={stats.high} />
             </div>
 
-            {/* Main Content Area */}
-            <div className="bg-white rounded-[12px] border border-border-light shadow-sm flex flex-col overflow-hidden flex-grow min-h-0">
-                {/* Table Section */}
-                <div className="overflow-y-auto flex-grow min-h-0 no-scrollbar">
+            {/* Main Content Container */}
+            <div className="bg-white rounded-[12px] border border-border-light shadow-sm flex flex-col overflow-visible flex-grow min-h-0">
+                
+                {/* Unified Filter Bar */}
+                <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-border-light bg-white rounded-t-[12px] relative z-20">
+                    <div className="flex items-center gap-6 text-[13px]">
+                        <DateRangeDropdown selectedValue={dateFilter} onChange={setDateFilter} />
+                        
+                        <div className="w-px h-3 bg-border-color hidden sm:block"></div>
+                        
+                        <div className="flex items-center gap-2">
+                            <span className="text-text-muted font-medium">Priority:</span>
+                            <MultiSelectDropdown 
+                                label="All" 
+                                options={['Low', 'Medium', 'High']} 
+                                selectedOptions={priorityFilter} 
+                                onChange={setPriorityFilter} 
+                                selectionMode="single"
+                            />
+                        </div>
+
+                        <div className="w-px h-3 bg-border-color hidden sm:block"></div>
+
+                        <div className="flex items-center gap-2">
+                            <span className="text-text-muted font-medium">Status:</span>
+                            <MultiSelectDropdown 
+                                label="All" 
+                                options={['Assigned', 'In progress', 'Optimized', 'Cannot be optimized', 'Needs clarification']} 
+                                selectedOptions={statusFilter} 
+                                onChange={setStatusFilter} 
+                                selectionMode="single"
+                            />
+                        </div>
+
+                        <div className="w-px h-3 bg-border-color hidden sm:block"></div>
+
+                        <div className="flex items-center gap-2">
+                            <span className="text-text-muted font-medium">Assignee:</span>
+                            <MultiSelectDropdown 
+                                label="All" 
+                                options={assigneeOptions} 
+                                selectedOptions={assigneeFilter} 
+                                onChange={setAssigneeFilter} 
+                                selectionMode="single"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="relative">
+                        <IconSearch className="w-4 h-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
+                        <input 
+                            type="text" 
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                            className="bg-transparent border-none text-sm font-medium focus:ring-0 outline-none pr-8 placeholder:text-text-muted w-64 text-right"
+                            placeholder="Search tasks..."
+                        />
+                    </div>
+                </div>
+
+                {/* Table Body - Matching Resource Summary Density */}
+                <div className="overflow-x-auto overflow-y-auto flex-grow min-h-0 no-scrollbar">
                     {filteredQueries.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center p-20 text-center">
                             <div className="w-16 h-16 bg-surface-nested rounded-full flex items-center justify-center mb-4">
                                 <IconClipboardList className="w-8 h-8 text-text-muted" />
                             </div>
                             <h3 className="text-base font-bold text-text-strong">No assigned queries found</h3>
-                            <p className="text-sm text-text-secondary mt-1">There are no queries matching your search or filters.</p>
+                            <p className="text-sm text-text-secondary mt-1">Adjust your filters to see more results.</p>
                         </div>
                     ) : (
-                        <table className="w-full text-[13px] text-left border-separate border-spacing-0">
-                            <thead className="bg-[#E0E2E5] sticky top-0 z-10">
+                        <table className="w-full text-left border-separate border-spacing-0">
+                            <thead className="bg-[#F8F9FA] sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-6 py-4 font-bold text-text-strong tracking-tight w-[150px]">Query ID</th>
-                                    <th className="px-6 py-4 font-bold text-text-strong tracking-tight">Description</th>
-                                    <th className="px-6 py-4 font-bold text-text-strong tracking-tight w-[120px]">Credits</th>
-                                    <th className="px-6 py-4 font-bold text-text-strong tracking-tight w-[150px]">Assigned To</th>
-                                    <th className="px-6 py-4 font-bold text-text-strong tracking-tight w-[120px]">Priority &darr;</th>
-                                    <th className="px-6 py-4 font-bold text-text-strong tracking-tight w-[120px]">Status</th>
-                                    <th className="px-6 py-4 font-bold text-text-strong tracking-tight w-[150px]">Assigned Date</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light uppercase tracking-widest w-[160px]">Query ID</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light uppercase tracking-widest">Description</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light uppercase tracking-widest w-[120px]">Credits</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light uppercase tracking-widest w-[150px]">Assigned To</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light uppercase tracking-widest w-[120px]">Priority</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light uppercase tracking-widest w-[140px]">Status</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light uppercase tracking-widest w-[150px] text-right">Date</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white">
+                            <tbody className="bg-white divide-y divide-border-light">
                                 {paginatedData.map((query) => (
-                                    <tr 
-                                        key={query.id} 
-                                        className="hover:bg-surface-nested group transition-colors relative border-b border-border-light"
-                                    >
+                                    <tr key={query.id} className="hover:bg-surface-nested transition-colors group">
                                         <td className="px-6 py-5">
                                             <button 
                                                 onClick={() => onViewQuery(query.queryId)}
-                                                className="text-link font-medium hover:underline text-left truncate block w-full"
-                                                title={query.queryId}
+                                                className="text-sm font-bold text-link hover:underline text-left truncate block w-full"
                                             >
                                                 {query.queryId}
                                             </button>
                                         </td>
-                                        <td className="px-6 py-5 text-text-secondary italic">
-                                            <span className="truncate block max-w-md" title={query.message}>
+                                        <td className="px-6 py-5">
+                                            <span className="text-sm font-medium text-text-secondary italic line-clamp-1" title={query.message}>
                                                 "{query.message}"
                                             </span>
                                         </td>
-                                        <td className="px-6 py-5 font-bold text-text-strong">
-                                            {query.credits.toFixed(2)}
+                                        <td className="px-6 py-5">
+                                            <span className="text-sm font-black text-text-strong">
+                                                {query.credits.toFixed(2)}
+                                            </span>
                                         </td>
-                                        <td className="px-6 py-5 text-text-primary">
-                                            {query.assignedTo}
+                                        <td className="px-6 py-5">
+                                            <span className="text-sm font-medium text-text-primary">{query.assignedTo}</span>
                                         </td>
                                         <td className="px-6 py-5">
                                             <PriorityBadge priority={query.priority} />
@@ -223,12 +224,10 @@ const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, curr
                                         <td className="px-6 py-5">
                                             <StatusBadge status={query.status} />
                                         </td>
-                                        <td className="px-6 py-5 text-text-muted font-medium whitespace-nowrap">
-                                            {new Date(query.assignedOn).toLocaleDateString('en-US', {
-                                                month: '2-digit',
-                                                day: '2-digit',
-                                                year: 'numeric'
-                                            })}
+                                        <td className="px-6 py-5 text-right whitespace-nowrap">
+                                            <span className="text-[12px] font-bold text-text-muted">
+                                                {new Date(query.assignedOn).toLocaleDateString()}
+                                            </span>
                                         </td>
                                     </tr>
                                 ))}
@@ -237,14 +236,18 @@ const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, curr
                     )}
                 </div>
 
-                <div className="flex-shrink-0 border-t border-border-light">
+                {/* Pagination - Matching Resource Summary */}
+                <div className="flex-shrink-0 bg-white border-t border-border-light">
                     <Pagination 
                         currentPage={currentPage}
                         totalPages={totalPages}
                         totalItems={filteredQueries.length}
                         itemsPerPage={itemsPerPage}
                         onPageChange={setCurrentPage}
-                        onItemsPerPageChange={setItemsPerPage}
+                        onItemsPerPageChange={(size) => {
+                            setItemsPerPage(size);
+                            setCurrentPage(1);
+                        }}
                     />
                 </div>
             </div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Account, SQLFile, BigScreenWidget, QueryListItem, PullRequest, User, QueryListFilters, SlowQueryFilters, BreadcrumbItem, Warehouse, AssignedQuery, CortexModel } from '../types';
+import { Account, SQLFile, BigScreenWidget, QueryListItem, PullRequest, User, QueryListFilters, SlowQueryFilters, BreadcrumbItem, Warehouse, AssignedQuery, CortexModel, AssignmentStatus } from '../types';
 import AccountOverviewDashboard from './AccountOverviewDashboard';
 import { SimilarQueryPatternsView } from './QueryPerformanceView';
 import { accountNavItems, IconChevronRight } from '../constants';
@@ -10,7 +10,8 @@ import {
     IconList, 
     IconSearch,
     IconSparkles,
-    IconClock
+    IconClock,
+    IconChevronLeft
 } from '../constants';
 import QueryListView from './QueryListView';
 import StorageSummaryView from './StorageSummaryView';
@@ -24,7 +25,6 @@ import QueryAnalyzerView from './QueryAnalyzerView';
 import QueryOptimizerView from './QueryOptimizerView';
 import QuerySimulatorView from './QuerySimulatorView';
 import SlowQueriesView from './SlowQueriesView';
-import WarehouseOverview from './WarehouseOverview';
 import AllWarehouses from './AllWarehouses';
 import WarehouseDetailView from './WarehouseDetailView';
 import ContextualSidebar from '../components/ContextualSidebar';
@@ -60,7 +60,7 @@ interface AccountViewProps {
     warehouses: Warehouse[];
     assignment?: AssignedQuery;
     currentUser: User | null;
-    onUpdateAssignmentStatus: (assignmentId: string, status: any) => void;
+    onUpdateAssignmentStatus: (assignmentId: string, status: AssignmentStatus) => void;
     onAssignToEngineer: (query: QueryListItem) => void;
     onResolveAssignment: (assignmentId: string) => void;
     selectedApplicationId?: string | null;
@@ -144,7 +144,6 @@ const CortexListView: React.FC<{
     }, [search]);
 
     const globalMetrics = useMemo(() => {
-        // Parse token strings like "450K" or "1.2M" into numbers for aggregation
         const parseTokens = (t: string): number => {
             const val = parseFloat(t.replace(/[KM]/g, ''));
             if (t.includes('M')) return val * 1000000;
@@ -200,7 +199,7 @@ const CortexListView: React.FC<{
                         <IconSearch className="w-4 h-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
                         <input 
                             type="text" 
-                            value={search}
+                            value={search} 
                             onChange={(e) => setSearch(e.target.value)}
                             className="bg-transparent border-none text-sm font-medium focus:ring-0 outline-none pr-8 placeholder:text-text-muted w-64 text-right"
                             placeholder="Search models..."
@@ -311,11 +310,13 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
     };
 
     const handleSidebarPageChange = (newPage: string) => {
-        // If we are currently on application detail and clicking anywhere on sidebar (or just Applications),
-        // we should reset the application selection.
         if (selectedApplicationId) {
             setSelectedApplicationId(null);
         }
+        // Reset specific drill-down states when changing primary section via sidebar
+        setSelectedWarehouse(null);
+        setSelectedQuery(null);
+        setSelectedPullRequest(null);
         onPageChange(newPage);
     };
 
@@ -328,6 +329,7 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
                 onBack={() => setSelectedWarehouse(null)} 
                 warehouses={warehouses}
                 onSwitchWarehouse={setSelectedWarehouse}
+                onNavigateToRecommendations={onNavigateToRecommendations}
             />;
         }
         if (selectedPullRequest) {
@@ -362,105 +364,97 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
                     onSelectApp={setSelectedApplicationId} 
                     onNavigateToRecommendations={onNavigateToRecommendations} 
                 />;
-            case 'Overview':
-                return <WarehouseOverview warehouses={warehouses} onSelectWarehouse={setSelectedWarehouse} />;
-            case 'All Warehouses':
-                return <AllWarehouses warehouses={warehouses} onSelectWarehouse={setSelectedWarehouse} />;
-            case 'My Branches':
-                return <MyBranchesView />;
-            case 'Query Versions':
-                return <QueryVersionsView sqlFiles={sqlFiles} />;
-            case 'Query analyzer':
-                return <QueryAnalyzerView
-                    query={analyzingQuery}
-                    onBack={handleBackFromTool}
-                    onSaveClick={onSaveQueryClick}
-                    onBrowseQueries={() => onPageChange('All queries')}
-                    onOptimizeQuery={(q) => onOptimizeQuery(q, 'Query analyzer')}
+            case 'Warehouses':
+                return <AllWarehouses 
+                    warehouses={warehouses} 
+                    onSelectWarehouse={setSelectedWarehouse} 
+                    onNavigateToRecommendations={onNavigateToRecommendations} 
                 />;
-            case 'Query optimizer':
-                return <QueryOptimizerView
-                    query={analyzingQuery}
-                    onBack={handleBackFromTool}
-                    onSaveClick={onSaveQueryClick}
-                    onSimulateQuery={(q) => onSimulateQuery(q, 'Query optimizer')}
-                />;
-            case 'Query simulator':
-                 return <QuerySimulatorView
-                    query={analyzingQuery}
-                    onBack={handleBackFromTool}
-                    onSaveClick={onSaveQueryClick}
-                />;
-            case 'Pull Requests':
-                return <PullRequestsView pullRequests={pullRequests} onSelectPullRequest={setSelectedPullRequest} />;
             case 'All queries':
-                 return <QueryListView 
+                return <QueryListView 
                     onShareQueryClick={onShareQueryClick} 
                     onSelectQuery={setSelectedQuery} 
-                    onAnalyzeQuery={(q) => onAnalyzeQuery(q, 'All queries')}
-                    onOptimizeQuery={(q) => onOptimizeQuery(q, 'All queries')}
-                    onSimulateQuery={(q) => onSimulateQuery(q, 'All queries')}
-                    filters={allQueriesFilters}
-                    setFilters={setAllQueriesFilters}
-                 />;
+                    onAnalyzeQuery={(q) => onAnalyzeQuery(q, 'All queries')} 
+                    onOptimizeQuery={(q) => onOptimizeQuery(q, 'All queries')} 
+                    onSimulateQuery={(q) => onSimulateQuery(q, 'All queries')} 
+                    filters={allQueriesFilters} 
+                    setFilters={setAllQueriesFilters} 
+                />;
             case 'Slow queries':
                 return <SlowQueriesView 
-                    onAnalyzeQuery={(q) => onAnalyzeQuery(q, 'Slow queries')}
-                    onOptimizeQuery={(q) => onOptimizeQuery(q, 'Slow queries')}
-                    onSimulateQuery={(q) => onAnalyzeQuery(q, 'Slow queries')}
-                    onPreviewQuery={onPreviewQuery}
-                    filters={slowQueriesFilters}
-                    setFilters={setSlowQueriesFilters}
+                    onAnalyzeQuery={(q) => onAnalyzeQuery(q, 'Slow queries')} 
+                    onOptimizeQuery={(q) => onOptimizeQuery(q, 'Slow queries')} 
+                    onSimulateQuery={(q) => onSimulateQuery(q, 'Slow queries')} 
+                    onPreviewQuery={onPreviewQuery} 
+                    filters={slowQueriesFilters} 
+                    setFilters={setSlowQueriesFilters} 
+                />;
+            case 'Query analyzer':
+                return <QueryAnalyzerView 
+                    query={analyzingQuery} 
+                    onBack={handleBackFromTool} 
+                    onSaveClick={onSaveQueryClick} 
+                    onBrowseQueries={() => handleSidebarPageChange('All queries')} 
+                    onOptimizeQuery={(q) => onOptimizeQuery(q, activePage)} 
+                />;
+            case 'Query optimizer':
+                return <QueryOptimizerView 
+                    query={analyzingQuery} 
+                    onBack={handleBackFromTool} 
+                    onSaveClick={onSaveQueryClick} 
+                    onSimulateQuery={(q) => onSimulateQuery(q, activePage)} 
+                />;
+            case 'Query simulator':
+                return <QuerySimulatorView 
+                    query={analyzingQuery} 
+                    onBack={handleBackFromTool} 
+                    onSaveClick={onSaveQueryClick} 
                 />;
             case 'Storage summary':
-                return <StorageSummaryView onSelectDatabase={handleSelectDatabaseFromSummary} onSetBigScreenWidget={onSetBigScreenWidget} />;
+                return <StorageSummaryView 
+                    onSelectDatabase={handleSelectDatabaseFromSummary} 
+                    onSetBigScreenWidget={onSetBigScreenWidget} 
+                />;
             case 'Databases':
-                return <DatabasesView selectedDatabaseId={selectedDatabaseId} onSelectDatabase={setSelectedDatabaseId} onBackToList={handleBackToDbList} />;
-            case 'Cortex list':
+                return <DatabasesView 
+                    selectedDatabaseId={selectedDatabaseId} 
+                    onSelectDatabase={setSelectedDatabaseId} 
+                    onBackToList={handleBackToDbList} 
+                />;
+            case 'Cortex':
                 return <CortexListView onNavigateToRecommendations={onNavigateToRecommendations} />;
             default:
-                return <div className="px-6 pt-4 pb-12"><h1 className="text-xl font-bold">{activePage}</h1><p>Content for this page is under construction.</p></div>;
+                return <AccountOverviewDashboard account={account} />;
         }
     };
-    
-    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'All Warehouses', 'Applications', 'Cortex list'].includes(activePage);
+
+    const isDeepDrillDown = !!selectedWarehouse || !!selectedQuery || !!selectedPullRequest || isDatabaseDetailView;
+    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'Warehouses', 'Applications', 'Cortex'].includes(activePage);
 
     return (
-        <div className="flex h-full bg-background">
-            {/* Contextual Sidebar */}
-            {!isDatabaseDetailView && !selectedQuery && !selectedPullRequest && !selectedWarehouse && (
-                <ContextualSidebar
-                    account={account}
-                    accounts={accounts}
-                    onSwitchAccount={onSwitchAccount}
-                    activePage={activePage}
-                    onPageChange={handleSidebarPageChange}
-                    onBackToAccounts={onBackToAccounts}
-                    backLabel={backLabel}
-                    selectedApplicationId={selectedApplicationId}
-                />
-            )}
-
-            {/* Main Content */}
-            <main className={`flex-1 flex flex-col overflow-hidden bg-background`}>
-                {/* Breadcrumb row: placed right of sidebar, beneath header */}
-                {!isDatabaseDetailView && !selectedQuery && !selectedPullRequest && !selectedWarehouse && (
-                    <div className="bg-surface shadow-sm flex-shrink-0 z-10 border-b border-border-light">
-                        <div className="h-[42px] px-6 flex items-center">
-                            <Breadcrumb items={breadcrumbItems} />
-                        </div>
+        <div className="flex h-full overflow-hidden">
+            <ContextualSidebar 
+                account={account} 
+                accounts={accounts} 
+                onSwitchAccount={onSwitchAccount} 
+                activePage={activePage} 
+                onPageChange={handleSidebarPageChange} 
+                onBackToAccounts={onBackToAccounts} 
+                backLabel={backLabel}
+                selectedApplicationId={selectedApplicationId}
+            />
+            <main className="flex-1 flex flex-col overflow-hidden relative">
+                <div className="bg-surface shadow-sm flex-shrink-0 z-10 border-b border-border-light">
+                    <div className="h-[42px] px-6 flex items-center">
+                        <Breadcrumb items={breadcrumbItems} />
                     </div>
-                )}
+                </div>
                 
-                <div className={`flex-1 ${isListView ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
-                    {!isDatabaseDetailView && !selectedQuery && !selectedPullRequest && !selectedWarehouse && (
-                        <div className="lg:hidden p-4 pb-0">
-                            <MobileNav activePage={activePage} onPageChange={handleSidebarPageChange} accountNavItems={accountNavItems} />
-                        </div>
-                    )}
-                    <div className={`h-full ${isDatabaseDetailView || selectedQuery || selectedPullRequest || selectedWarehouse || isListView ? "" : "px-6 pt-4 pb-12"}`}>
-                        {renderContent()}
+                <div className={`flex-1 overflow-auto bg-background ${isDeepDrillDown ? '' : (isListView && !selectedWarehouse ? "" : "px-6 pt-4 pb-12")}`}>
+                    <div className="lg:hidden p-4 pb-0">
+                         <MobileNav activePage={activePage} onPageChange={handleSidebarPageChange} accountNavItems={accountNavItems} />
                     </div>
+                    {renderContent()}
                 </div>
             </main>
         </div>

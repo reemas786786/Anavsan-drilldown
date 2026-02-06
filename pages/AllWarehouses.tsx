@@ -1,10 +1,13 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Warehouse, WarehouseHealth } from '../types';
-import { IconArrowUp, IconArrowDown, IconSearch, IconSparkles, IconInfo } from '../constants';
+import { IconArrowUp, IconArrowDown, IconSearch, IconSparkles, IconInfo, IconChevronRight } from '../constants';
 import Pagination from '../components/Pagination';
 import DateRangeDropdown from '../components/DateRangeDropdown';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
+// Added missing InfoTooltip import
+import InfoTooltip from '../components/InfoTooltip';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
 
 const StatusBadge: React.FC<{ status: Warehouse['status'] }> = ({ status }) => {
     const colorClasses: Record<Warehouse['status'], string> = {
@@ -43,9 +46,10 @@ const HealthBadge: React.FC<{ health: WarehouseHealth }> = ({ health }) => {
 interface AllWarehousesProps {
     warehouses: Warehouse[];
     onSelectWarehouse: (warehouse: Warehouse) => void;
+    onNavigateToRecommendations?: (filters: { search?: string; account?: string }) => void;
 }
 
-const AllWarehouses: React.FC<AllWarehousesProps> = ({ warehouses, onSelectWarehouse }) => {
+const AllWarehouses: React.FC<AllWarehousesProps> = ({ warehouses, onSelectWarehouse, onNavigateToRecommendations }) => {
     const [sortConfig, setSortConfig] = useState<{ key: keyof Warehouse; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -58,12 +62,31 @@ const AllWarehouses: React.FC<AllWarehousesProps> = ({ warehouses, onSelectWareh
     const warehouseSizes = ['X-Small', 'Small', 'Medium', 'Large', 'X-Large'];
     const healthOptions = ['Optimized', 'Under-utilized', 'Over-provisioned'];
 
+    // Mock trend data for graphs
+    const usageTrendData = [
+        { date: 'Oct 01', credits: 45 }, { date: 'Oct 05', credits: 62 }, { date: 'Oct 10', credits: 55 },
+        { date: 'Oct 15', credits: 82 }, { date: 'Oct 20', credits: 74 }, { date: 'Oct 25', credits: 91 },
+        { date: 'Oct 30', credits: 110 }
+    ];
+
+    const loadDistributionData = warehouses.slice(0, 8).map(w => ({
+        name: w.name,
+        load: Math.floor(Math.random() * 60) + 20
+    }));
+
     useEffect(() => {
         setCurrentPage(1);
     }, [search, sizeFilter, healthFilter, itemsPerPage]);
 
+    const warehousesWithInsights = useMemo(() => {
+        return warehouses.map(wh => ({
+            ...wh,
+            insightCount: wh.health === 'Optimized' ? 0 : Math.floor(Math.random() * 3) + 1
+        }));
+    }, [warehouses]);
+
     const filteredAndSortedWarehouses = useMemo(() => {
-        let filtered = warehouses.filter(wh => {
+        let filtered = warehousesWithInsights.filter(wh => {
             if (search && !wh.name.toLowerCase().includes(search.toLowerCase())) return false;
             if (sizeFilter.length > 0 && !sizeFilter.includes(wh.size)) return false;
             if (healthFilter.length > 0 && !healthFilter.includes(wh.health)) return false;
@@ -78,7 +101,7 @@ const AllWarehouses: React.FC<AllWarehousesProps> = ({ warehouses, onSelectWareh
             });
         }
         return filtered;
-    }, [warehouses, search, sizeFilter, healthFilter, sortConfig]);
+    }, [warehousesWithInsights, search, sizeFilter, healthFilter, sortConfig]);
 
     const totalPages = Math.ceil(filteredAndSortedWarehouses.length / itemsPerPage);
     const paginatedData = useMemo(() => filteredAndSortedWarehouses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage), [filteredAndSortedWarehouses, currentPage, itemsPerPage]);
@@ -97,19 +120,21 @@ const AllWarehouses: React.FC<AllWarehousesProps> = ({ warehouses, onSelectWareh
     };
 
     return (
-        <div className="px-6 pt-4 pb-12 flex flex-col space-y-3">
-            <div className="mb-8">
-                <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Warehouse Inventory</h1>
-                <p className="text-sm text-text-secondary font-medium mt-1">Monitor health, sizing, and automated optimization suggestions for all Snowflake clusters.</p>
+        <div className="px-6 pt-4 pb-12 flex flex-col space-y-6 overflow-y-auto no-scrollbar h-full">
+            <div className="mb-4">
+                <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Warehouses</h1>
+                <p className="text-sm text-text-secondary font-medium mt-1">Manage, monitor health, and optimize all compute clusters in this account.</p>
             </div>
-            <div className="bg-surface rounded-xl flex flex-col shadow-sm border border-border-light overflow-hidden">
-                <div className="p-2 mb-2 flex-shrink-0 flex items-center gap-x-4 border-b border-border-color">
-                    <div className="pl-2"><DateRangeDropdown selectedValue={dateFilter} onChange={setDateFilter} /></div>
-                    <div className="h-4 w-px bg-border-color"></div>
+
+            {/* Main Inventory Table */}
+            <div className="bg-surface rounded-2xl flex flex-col shadow-sm border border-border-light overflow-hidden flex-shrink-0">
+                <div className="p-4 flex flex-wrap items-center gap-6 border-b border-border-light bg-white rounded-t-[12px] relative z-20">
+                    <DateRangeDropdown selectedValue={dateFilter} onChange={setDateFilter} />
+                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
                     <MultiSelectDropdown label="Size" options={warehouseSizes} selectedOptions={sizeFilter} onChange={setSizeFilter} selectionMode="single" />
-                    <div className="h-4 w-px bg-border-color"></div>
+                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
                     <MultiSelectDropdown label="Health Status" options={healthOptions} selectedOptions={healthFilter} onChange={setHealthFilter} selectionMode="single" />
-                    <div className="relative flex-grow ml-auto">
+                    <div className="relative flex-grow ml-auto max-w-xs">
                         <IconSearch className="h-4 w-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
                             type="search"
@@ -121,63 +146,118 @@ const AllWarehouses: React.FC<AllWarehousesProps> = ({ warehouses, onSelectWareh
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-[12px]">
-                        <thead className="text-[10px] text-text-secondary uppercase tracking-widest sticky top-0 z-10 bg-table-header-bg">
+                <div className="overflow-x-auto overflow-y-auto max-h-[400px] no-scrollbar">
+                    <table className="w-full text-[13px] border-separate border-spacing-0">
+                        <thead className="bg-[#F8F9FA] sticky top-0 z-10 font-bold uppercase tracking-widest text-[10px] text-text-muted">
                             <tr>
-                                <th scope="col" className="px-6 py-4 font-bold text-left border-b border-border-color"><button onClick={() => requestSort('name')} className="group flex items-center">Warehouse <SortIcon columnKey="name" /></button></th>
-                                <th scope="col" className="px-6 py-4 font-bold text-left border-b border-border-color"><button onClick={() => requestSort('health')} className="group flex items-center">Health <SortIcon columnKey="health" /></button></th>
-                                <th scope="col" className="px-6 py-4 font-bold text-left border-b border-border-color"><button onClick={() => requestSort('size')} className="group flex items-center">Size <SortIcon columnKey="size" /></button></th>
-                                <th scope="col" className="px-6 py-4 font-bold text-left border-b border-border-color"><button onClick={() => requestSort('status')} className="group flex items-center">Status <SortIcon columnKey="status" /></button></th>
-                                <th scope="col" className="px-6 py-4 font-bold text-left border-b border-border-color"><button onClick={() => requestSort('credits')} className="group flex items-center">Usage <SortIcon columnKey="credits" /></button></th>
-                                <th scope="col" className="px-6 py-4 font-bold text-right border-b border-border-color">AI Actions</th>
+                                <th scope="col" className="px-6 py-4 text-left border-b border-border-color"><button onClick={() => requestSort('name')} className="group flex items-center">Warehouse <SortIcon columnKey="name" /></button></th>
+                                <th scope="col" className="px-6 py-4 text-left border-b border-border-color"><button onClick={() => requestSort('health')} className="group flex items-center">Health <SortIcon columnKey="health" /></button></th>
+                                <th scope="col" className="px-6 py-4 text-left border-b border-border-color"><button onClick={() => requestSort('size')} className="group flex items-center">Size <SortIcon columnKey="size" /></button></th>
+                                <th scope="col" className="px-6 py-4 text-left border-b border-border-color"><button onClick={() => requestSort('status')} className="group flex items-center">Status <SortIcon columnKey="status" /></button></th>
+                                <th scope="col" className="px-6 py-4 text-left border-b border-border-color"><button onClick={() => requestSort('credits')} className="group flex items-center">Usage <SortIcon columnKey="credits" /></button></th>
+                                <th scope="col" className="px-6 py-4 text-right border-b border-border-color">Insights</th>
                             </tr>
                         </thead>
-                        <tbody className="text-text-secondary bg-white">
+                        <tbody className="bg-white divide-y divide-border-light">
                             {paginatedData.map(wh => (
-                                <tr key={wh.id} className="border-b border-border-light last:border-b-0 hover:bg-surface-nested group">
-                                    <td className="px-6 py-3 font-bold text-link whitespace-nowrap">
+                                <tr key={wh.id} className="hover:bg-surface-nested group transition-colors">
+                                    <td className="px-6 py-5 font-bold text-link whitespace-nowrap">
                                         <button onClick={() => onSelectWarehouse(wh)} className="hover:underline focus:outline-none">
                                             {wh.name}
                                         </button>
                                     </td>
-                                    <td className="px-6 py-3">
+                                    <td className="px-6 py-5">
                                         <HealthBadge health={wh.health} />
                                     </td>
-                                    <td className="px-6 py-3 font-medium">{wh.size}</td>
-                                    <td className="px-6 py-3"><StatusBadge status={wh.status} /></td>
-                                    <td className="px-6 py-3 font-bold text-text-primary">{wh.credits.toLocaleString()} cr</td>
-                                    <td className="px-6 py-3 text-right">
-                                        {wh.health !== 'Optimized' ? (
-                                            <div className="flex justify-end gap-2">
-                                                <div className="relative group/note">
-                                                    <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/20">
-                                                        <IconSparkles className="w-4 h-4" />
-                                                    </button>
-                                                    <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-sidebar-topbar text-white text-[11px] rounded-xl shadow-xl opacity-0 invisible group-hover/note:opacity-100 group-hover/note:visible transition-all z-50 pointer-events-none">
-                                                        <p className="font-black text-primary mb-1 uppercase tracking-widest">Anavsan Insight</p>
-                                                        {wh.optimizationNote}
-                                                        <div className="absolute top-full right-4 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-sidebar-topbar"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <span className="text-[10px] text-emerald-600 font-bold uppercase mr-2">Optimized</span>
-                                        )}
+                                    <td className="px-6 py-5 font-medium text-text-primary">{wh.size}</td>
+                                    <td className="px-6 py-5"><StatusBadge status={wh.status} /></td>
+                                    <td className="px-6 py-5 font-black text-text-strong">{wh.credits.toLocaleString()} cr</td>
+                                    <td className="px-6 py-5 text-right">
+                                        <div className="flex items-center justify-end gap-3">
+                                            <button 
+                                                onClick={() => onNavigateToRecommendations?.({ search: wh.name })}
+                                                className="inline-flex items-center gap-1 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                            >
+                                                <span className="text-xs font-black">{wh.insightCount}</span>
+                                                <span className="text-[9px] font-bold uppercase">Insights</span>
+                                            </button>
+                                            <button onClick={() => onSelectWarehouse(wh)} className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all">
+                                                <IconChevronRight className="w-5 h-5" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={filteredAndSortedWarehouses.length}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={setCurrentPage}
-                    onItemsPerPageChange={setItemsPerPage}
-                />
+                <div className="flex-shrink-0 bg-white border-t border-border-light">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={filteredAndSortedWarehouses.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={setItemsPerPage}
+                    />
+                </div>
+            </div>
+
+            {/* Analytic Section below the table */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+                {/* Usage Trend Card */}
+                <div className="bg-white p-6 rounded-[24px] border border-border-light shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2">
+                             <h3 className="text-sm font-black text-text-strong uppercase tracking-[0.15em]">Aggregate Usage Trend</h3>
+                             <InfoTooltip text="Total credit usage trend for all warehouses in this account over the last 30 days." />
+                        </div>
+                    </div>
+                    <div className="h-[240px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={usageTrendData}>
+                                <defs>
+                                    <linearGradient id="usageGradientWH" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#6932D5" stopOpacity={0.2}/>
+                                        <stop offset="95%" stopColor="#6932D5" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F0" />
+                                <XAxis dataKey="date" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9A9AB2', fontWeight: 600}} />
+                                <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9A9AB2', fontWeight: 600}} />
+                                <Tooltip contentStyle={{borderRadius: '12px', border: 'none', shadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                                <Area type="monotone" dataKey="credits" stroke="#6932D5" strokeWidth={3} fillOpacity={1} fill="url(#usageGradientWH)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <p className="mt-4 text-[11px] text-text-secondary font-medium italic">
+                        * Note: High volatility detected around Oct 15 due to large ETL processing window.
+                    </p>
+                </div>
+
+                {/* Load distribution card */}
+                <div className="bg-white p-6 rounded-[24px] border border-border-light shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2">
+                             <h3 className="text-sm font-black text-text-strong uppercase tracking-[0.15em]">Cluster Load distribution</h3>
+                             <InfoTooltip text="Average load percentage for the most active warehouses." />
+                        </div>
+                    </div>
+                    <div className="h-[240px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={loadDistributionData} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F0F0F0" />
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#5A5A72', fontWeight: 700}} width={90} />
+                                <Tooltip cursor={{fill: 'transparent'}} />
+                                <Bar dataKey="load" fill="#A78BFA" radius={[0, 4, 4, 0]} barSize={12} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                     <p className="mt-4 text-[11px] text-text-secondary font-medium italic">
+                        * Recommendation: Scaling up overloaded clusters can reduce query queueing and improve end-user latency.
+                    </p>
+                </div>
             </div>
         </div>
     );

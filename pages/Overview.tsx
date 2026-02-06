@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, Legend } from 'recharts';
 import { 
@@ -142,7 +141,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
         const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
         return (
-            <div className="bg-surface p-3 rounded-lg shadow-xl border border-border-color min-w-[160px]">
+            <div className="bg-surface p-3 rounded-lg shadow-xl border border-border-color min-w-160px]">
                 <p className="text-xs font-bold text-text-strong mb-2 border-b border-border-light pb-1">{label}</p>
                 <div className="space-y-1.5 mb-2">
                     {payload.map((entry: any, index: number) => (
@@ -382,12 +381,6 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onSelect
                             value="36 TB" 
                             subValue="2.1K Credits" 
                             onClick={() => onNavigate('Resource summary', undefined, { tab: 'Storage' })} 
-                        />
-                        <SummaryMetricCard 
-                            label="Applications" 
-                            value="5" 
-                            subValue="50.5K Credits" 
-                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Applications' })} 
                         />
                         <SummaryMetricCard 
                             label="Workloads" 

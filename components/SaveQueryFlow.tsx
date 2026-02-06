@@ -59,8 +59,9 @@ const SaveQueryFlow: React.FC<SaveQueryFlowProps> = ({ files, onCancel, onSave, 
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="p-8 space-y-6 flex-grow">
+        <div className="flex flex-col h-full min-h-0 bg-white overflow-hidden">
+            {/* Scrollable Content Area */}
+            <div className="p-8 space-y-6 flex-grow overflow-y-auto no-scrollbar">
                 {/* Save Type Radio */}
                 <fieldset>
                     <div className="flex gap-6">
@@ -131,7 +132,9 @@ const SaveQueryFlow: React.FC<SaveQueryFlowProps> = ({ files, onCancel, onSave, 
                      />
                 </div>
             </div>
-            <div className="p-6 bg-background flex justify-end items-center gap-3 flex-shrink-0">
+
+            {/* Pinned Footer */}
+            <div className="p-6 bg-background flex justify-end items-center gap-3 flex-shrink-0 border-t border-border-color">
                 <button onClick={onCancel} className="text-sm font-semibold px-4 py-2 rounded-full border border-border-color hover:bg-gray-50">Cancel</button>
                 <button 
                     onClick={handleSubmit} 

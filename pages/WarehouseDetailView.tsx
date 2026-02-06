@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Warehouse } from '../types';
-import { IconChevronLeft, IconChevronRight, IconSummary, IconList, IconChevronDown, IconCheck } from '../constants';
+import { IconChevronLeft, IconLightbulb } from '../constants';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { queryListData } from '../data/dummyData';
 import Pagination from '../components/Pagination';
@@ -11,14 +12,15 @@ interface WarehouseDetailViewProps {
     warehouses: Warehouse[];
     onSwitchWarehouse: (warehouse: Warehouse) => void;
     onBack: () => void;
+    onNavigateToRecommendations?: (filters: { search?: string; account?: string }) => void;
 }
 
 // --- HELPER & CHILD COMPONENTS ---
 
 const DetailItem: React.FC<{ label: string; value: React.ReactNode; }> = ({ label, value }) => (
     <div>
-        <p className="text-sm text-text-secondary">{label}</p>
-        <div className="text-sm font-semibold text-text-primary mt-1">{value}</div>
+        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{label}</p>
+        <div className="text-sm font-black text-text-primary mt-1">{value}</div>
     </div>
 );
 
@@ -36,8 +38,8 @@ const StatusBadge: React.FC<{ status: Warehouse['status'] }> = ({ status }) => {
         Idle: 'bg-status-info',
     };
     return (
-        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full ${colorClasses[status]}`}>
-            <span className={`w-2 h-2 mr-2 rounded-full ${dotClasses[status]}`}></span>
+        <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase rounded-full ${colorClasses[status]}`}>
+            <span className={`w-1.5 h-1.5 mr-1.5 rounded-full ${dotClasses[status]}`}></span>
             {status}
         </span>
     );
@@ -46,7 +48,7 @@ const StatusBadge: React.FC<{ status: Warehouse['status'] }> = ({ status }) => {
 const WarehouseAvatar: React.FC<{ name: string }> = ({ name }) => {
     const initials = name.split('_').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     return (
-        <div className="h-8 w-8 rounded-full bg-primary/20 text-primary text-xs font-semibold flex items-center justify-center flex-shrink-0">
+        <div className="h-8 w-8 rounded-full bg-primary/20 text-primary text-[10px] font-black flex items-center justify-center flex-shrink-0 border border-primary/10">
             {initials}
         </div>
     );
@@ -59,21 +61,21 @@ const CreditTrendChart: React.FC = () => {
       { date: 'Oct 16', credits: 2.2 },
     ];
     return (
-        <div className="bg-surface p-4 rounded-3xl break-inside-avoid mb-4">
-            <h3 className="text-base font-semibold text-text-strong mb-3">Credit Trend (Last 7 Days)</h3>
+        <div className="bg-white p-6 rounded-[24px] border border-border-light shadow-sm">
+            <h3 className="text-[11px] font-black text-text-strong uppercase tracking-widest mb-6">Credit Trend (Last 7 Days)</h3>
             <div style={{ height: 250 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                        <XAxis dataKey="date" stroke="#9A9AB2" fontSize={12} />
-                        <YAxis stroke="#9A9AB2" fontSize={12} unit="cr" />
-                        <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E5E0', borderRadius: '1rem' }} formatter={(value: number) => [`${value.toFixed(2)}`, 'Credits']} />
+                        <XAxis dataKey="date" stroke="#9A9AB2" fontSize={10} axisLine={false} tickLine={false} tick={{fontWeight: 700}} />
+                        <YAxis stroke="#9A9AB2" fontSize={10} unit="cr" axisLine={false} tickLine={false} tick={{fontWeight: 700}} />
+                        <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                         <defs>
-                            <linearGradient id="creditGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#6932D5" stopOpacity={0.7}/>
+                            <linearGradient id="creditGradientDetail" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#6932D5" stopOpacity={0.2}/>
                                 <stop offset="95%" stopColor="#6932D5" stopOpacity={0}/>
                             </linearGradient>
                         </defs>
-                        <Area type="monotone" dataKey="credits" stroke="#6932D5" strokeWidth={2} fillOpacity={1} fill="url(#creditGradient)" />
+                        <Area type="monotone" dataKey="credits" stroke="#6932D5" strokeWidth={3} fillOpacity={1} fill="url(#creditGradientDetail)" />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
@@ -85,28 +87,24 @@ const PrivilegesTable: React.FC = () => {
     const privileges = [
         { role: 'SYSADMIN', privilege: 'OWNERSHIP', grantedTo: 'ROLE' },
         { role: 'ACCOUNTADMIN', privilege: 'ALL', grantedTo: 'ROLE' },
-        { role: 'WAREHOUSE_OPERATORS', privilege: 'OPERATE', grantedTo: 'ROLE' },
-        { role: 'WAREHOUSE_MONITORS', privilege: 'MONITOR', grantedTo: 'ROLE' },
         { role: 'ANALYST_ROLE', privilege: 'USAGE', grantedTo: 'ROLE' },
     ];
     return (
-        <div className="bg-surface p-4 rounded-3xl break-inside-avoid mb-4">
-            <h3 className="text-base font-semibold text-text-strong mb-3">Privileges</h3>
+        <div className="bg-white p-6 rounded-[24px] border border-border-light shadow-sm">
+            <h3 className="text-[11px] font-black text-text-strong uppercase tracking-widest mb-6">Privileges</h3>
             <div className="overflow-auto">
                 <table className="w-full text-sm">
-                    <thead className="text-left text-xs text-text-primary sticky top-0 bg-table-header-bg z-10">
+                    <thead className="text-left text-[10px] text-text-muted font-black uppercase tracking-widest sticky top-0 bg-white z-10 border-b border-border-light">
                         <tr>
-                            <th className="py-2 px-3 font-medium">Role</th>
-                            <th className="py-2 px-3 font-medium">Privilege</th>
-                            <th className="py-2 px-3 font-medium">Granted To</th>
+                            <th className="py-2 px-3">Role</th>
+                            <th className="py-2 px-3">Privilege</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-color">
+                    <tbody className="divide-y divide-border-light">
                         {privileges.map((p, i) => (
-                            <tr key={i} className="hover:bg-surface-hover">
-                                <td className="py-2.5 px-3 font-semibold text-text-primary">{p.role}</td>
-                                <td className="py-2.5 px-3 text-text-secondary">{p.privilege}</td>
-                                <td className="py-2.5 px-3 text-text-secondary">{p.grantedTo}</td>
+                            <tr key={i} className="hover:bg-surface-nested group">
+                                <td className="py-3 px-3 font-bold text-text-primary group-hover:text-primary transition-colors">{p.role}</td>
+                                <td className="py-3 px-3 text-text-secondary font-medium">{p.privilege}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -119,44 +117,44 @@ const PrivilegesTable: React.FC = () => {
 const QueryHistoryTable: React.FC<{ warehouseName: string }> = ({ warehouseName }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const queries = queryListData.filter(q => q.warehouse === warehouseName);
+    const queries = useMemo(() => queryListData.filter(q => q.warehouse === warehouseName), [warehouseName]);
 
     const totalPages = Math.ceil(queries.length / itemsPerPage);
     const paginatedQueries = queries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     
     return (
-        <div className="bg-surface rounded-xl flex flex-col min-h-0 h-full">
-             <div className="p-4 flex-shrink-0">
-                <h2 className="text-xl font-bold text-text-strong">Executed Queries</h2>
-                <p className="mt-1 text-text-secondary">History of queries executed on this warehouse.</p>
-            </div>
-            <div className="overflow-y-auto flex-grow min-h-0">
-                <table className="w-full text-sm">
-                    <thead className="text-sm text-text-primary sticky top-0 z-10 bg-table-header-bg">
+        <div className="bg-white rounded-[24px] flex flex-col min-h-[500px] border border-border-light shadow-sm overflow-hidden">
+            <div className="overflow-y-auto flex-grow min-h-0 no-scrollbar">
+                <table className="w-full text-sm border-separate border-spacing-0">
+                    <thead className="bg-[#F8F9FA] sticky top-0 z-10 text-[10px] font-black text-text-muted uppercase tracking-widest">
                         <tr>
-                            <th className="px-6 py-4 font-semibold text-left">Query ID</th>
-                            <th className="px-6 py-4 font-semibold text-left">User</th>
-                            <th className="px-6 py-4 font-semibold text-left">Duration</th>
-                            <th className="px-6 py-4 font-semibold text-left">Cost (Credits)</th>
-                            <th className="px-6 py-4 font-semibold text-left">Start Time</th>
+                            <th className="px-6 py-4 text-left border-b border-border-light">Query ID</th>
+                            <th className="px-6 py-4 text-left border-b border-border-light">User</th>
+                            <th className="px-6 py-4 text-left border-b border-border-light">Duration</th>
+                            <th className="px-6 py-4 text-left border-b border-border-light">Credits</th>
+                            <th className="px-6 py-4 text-right border-b border-border-light">Start Time</th>
                         </tr>
                     </thead>
-                    <tbody className="text-text-secondary bg-surface">
+                    <tbody className="divide-y divide-border-light bg-white">
                         {paginatedQueries.map(q => (
-                            <tr key={q.id} className="border-b border-border-light last:border-b-0 hover:bg-surface-hover">
-                                <td className="px-6 py-3 font-mono text-xs text-link whitespace-nowrap">{q.id.substring(7, 13).toUpperCase()}</td>
-                                <td className="px-6 py-3">{q.user}</td>
-                                <td className="px-6 py-3">{q.duration}</td>
-                                {/* Fixed: Changed q.costCredits to q.costTokens as per QueryListItem definition */}
-                                <td className="px-6 py-3">{q.costTokens.toFixed(3)}</td>
-                                <td className="px-6 py-3">{new Date(q.timestamp).toLocaleString()}</td>
+                            <tr key={q.id} className="hover:bg-surface-nested group transition-colors">
+                                <td className="px-6 py-4 font-mono text-xs text-link font-bold">{q.id.substring(7, 13).toUpperCase()}</td>
+                                <td className="px-6 py-4 font-bold text-text-primary">{q.user}</td>
+                                <td className="px-6 py-4 text-text-secondary font-medium">{q.duration}</td>
+                                <td className="px-6 py-4 font-black text-text-strong">{q.costTokens.toFixed(3)} cr</td>
+                                <td className="px-6 py-4 text-right text-text-muted font-bold whitespace-nowrap">{new Date(q.timestamp).toLocaleString()}</td>
                             </tr>
                         ))}
+                        {paginatedQueries.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="py-20 text-center text-text-muted italic">No query history found for this warehouse.</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
             {queries.length > itemsPerPage && (
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 bg-white border-t border-border-light">
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
@@ -172,170 +170,131 @@ const QueryHistoryTable: React.FC<{ warehouseName: string }> = ({ warehouseName 
 };
 
 // --- MAIN COMPONENT ---
-const WarehouseDetailView: React.FC<WarehouseDetailViewProps> = ({ warehouse, warehouses, onSwitchWarehouse, onBack }) => {
-    const [activeSection, setActiveSection] = useState('Warehouse Details');
-    const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
-    const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
-    const switcherRef = useRef<HTMLDivElement>(null);
+const WarehouseDetailView: React.FC<WarehouseDetailViewProps> = ({ warehouse, onBack, onNavigateToRecommendations }) => {
+    const [activeTab, setActiveTab] = useState<'Details' | 'Query History'>('Details');
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (switcherRef.current && !switcherRef.current.contains(event.target as Node)) {
-                setIsSwitcherOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const insightCount = useMemo(() => warehouse.health === 'Optimized' ? 0 : Math.floor(Math.random() * 3) + 1, [warehouse]);
 
-    const navItems = [
-        { name: 'Warehouse Details', icon: IconSummary },
-        { name: 'Query History', icon: IconList }
-    ];
-
-    const renderContent = () => {
-        switch (activeSection) {
-            case 'Warehouse Details':
-                return (
-                    <div className="columns-1 lg:columns-2 gap-4">
-                        <div className="bg-surface p-4 rounded-3xl break-inside-avoid mb-4">
-                            <h3 className="text-base font-semibold text-text-strong">Details</h3>
-                            <div className="grid grid-cols-3 gap-x-8 gap-y-6 mt-4">
-                                <DetailItem label="Type" value="Standard" />
-                                <DetailItem label="Status" value={<StatusBadge status={'Suspended'} />} />
-                                <DetailItem label="Running" value="1 query" />
-                                <DetailItem label="Queued" value="0 queries" />
-                                <DetailItem label="Size" value={warehouse.size} />
-                                <DetailItem label="Max Clusters" value="1" />
-                                <DetailItem label="Min Clusters" value="1" />
-                                <DetailItem label="Scaling Policy" value="STANDARD" />
-                                <DetailItem label="Auto Suspend" value="600 seconds" />
-                                <DetailItem label="Auto Resume" value="Enabled" />
-                                <DetailItem label="Resumed On" value="3 hours ago" />
-                                <DetailItem label="Query Acceleration" value="Disabled" />
-                                <DetailItem label="Resource Constraint" value="STANDARD_GEN_1" />
-                            </div>
-                        </div>
-                        <div className="bg-surface p-4 rounded-3xl break-inside-avoid mb-4">
-                            <h3 className="text-base font-semibold text-text-strong mb-4">Credits Consumed</h3>
-                            <div className="bg-surface-nested p-4 rounded-xl">
-                                <p className="text-sm text-text-secondary">Total credits this period</p>
-                                <p className="text-2xl font-bold text-text-primary mt-1 flex items-baseline">
-                                    {warehouse.tokens.toLocaleString()}
-                                    <span className="text-sm font-medium text-text-secondary ml-1.5">credits</span>
-                                </p>
-                            </div>
-                        </div>
-                        <CreditTrendChart />
-                        <PrivilegesTable />
-                    </div>
-                );
-            case 'Query History':
-                return <QueryHistoryTable warehouseName={warehouse.name} />;
-            default:
-                return null;
-        }
-    };
-    
     return (
-        <div className="flex h-full bg-background">
-            <aside className={`bg-surface flex-shrink-0 flex flex-col transition-all duration-300 ${isSidebarExpanded ? 'w-64' : 'w-16'}`}>
-                <div className="p-2 flex-shrink-0">
-                    <div ref={switcherRef} className="relative w-full">
-                        <button
-                            // Fixed: Corrected function name from setIsAccountSwitcherOpen to setIsSwitcherOpen as per Error description
-                            onClick={() => setIsSwitcherOpen(prev => !prev)}
-                            className={`w-full flex items-center transition-colors group relative ${
-                                isSidebarExpanded
-                                ? 'text-left p-2 rounded-lg bg-background hover:bg-surface-hover border border-border-light justify-between'
-                                : 'h-10 w-10 rounded-full bg-surface-nested hover:bg-surface-hover justify-center'
-                            }`}
-                            aria-haspopup="true" aria-expanded={isSwitcherOpen}
-                            title={isSidebarExpanded ? "Switch Warehouse" : warehouse.name}
-                        >
-                            {isSidebarExpanded ? (
-                                <>
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <WarehouseAvatar name={warehouse.name} />
-                                        <span className="text-sm font-bold text-text-primary truncate">{warehouse.name}</span>
-                                    </div>
-                                    <IconChevronDown className={`h-5 w-5 text-text-secondary transition-transform ${isSwitcherOpen ? 'rotate-180' : ''}`} />
-                                </>
-                            ) : (
+        <div className="flex flex-col h-full bg-background overflow-y-auto no-scrollbar px-6 pt-4 pb-12">
+            <div className="max-w-[1440px] mx-auto w-full space-y-8">
+                {/* Header Section */}
+                <header className="flex flex-col gap-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={onBack} 
+                                className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-text-secondary border border-border-light hover:bg-surface-hover transition-all shadow-sm flex-shrink-0"
+                                aria-label="Back to All Warehouses"
+                            >
+                                <IconChevronLeft className="h-6 w-6" />
+                            </button>
+                            
+                            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white border border-border-light shadow-sm">
                                 <WarehouseAvatar name={warehouse.name} />
-                            )}
-                        </button>
-                        {isSwitcherOpen && (
-                            <div className={`absolute z-20 mt-1 rounded-lg bg-surface shadow-lg p-2 border border-border-color ${isSidebarExpanded ? 'w-full' : 'w-64 left-full ml-2 -top-2'}`}>
-                                <div className="text-xs font-semibold text-text-muted px-2 py-1 mb-1">Switch Warehouse</div>
-                                <ul className="max-h-60 overflow-y-auto">
-                                    {warehouses.map(wh => (
-                                        <li key={wh.id}>
-                                            <button
-                                                onClick={() => { onSwitchWarehouse(wh); setIsSwitcherOpen(false); }}
-                                                className={`w-full text-left flex items-center justify-between gap-2 p-2 rounded-lg text-sm font-medium transition-colors ${
-                                                    wh.id === warehouse.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-surface-hover text-text-secondary hover:text-text-primary'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                    <WarehouseAvatar name={wh.name} />
-                                                    <span className="truncate">{wh.name}</span>
-                                                </div>
-                                                {wh.id === warehouse.id && <IconCheck className="h-5 w-5 text-primary flex-shrink-0" />}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <div className="text-left">
+                                    <h1 className="text-xl font-black text-text-strong tracking-tight">{warehouse.name}</h1>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                         <StatusBadge status={warehouse.status} />
+                                         <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{warehouse.size}</span>
+                                    </div>
+                                </div>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
 
-                <nav className={`flex-grow px-2 ${isSidebarExpanded ? 'overflow-y-auto' : ''}`}>
-                    <ul className="space-y-1">
-                        {navItems.map(item => (
-                            <li key={item.name}>
-                                <button
-                                    onClick={() => setActiveSection(item.name)}
-                                    title={!isSidebarExpanded ? item.name : ''}
-                                    className={`w-full flex items-center text-left p-2 rounded-lg text-sm transition-colors ${
-                                        activeSection === item.name ? 'bg-[#EFE9FE] text-primary font-semibold' : 'text-text-strong font-medium hover:bg-surface-hover'
-                                    } ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
+                        {/* Top Action Area: AI Banner */}
+                        <div className="hidden lg:flex items-center gap-4 bg-[#150A2B] text-white pl-6 pr-2 py-2 rounded-2xl shadow-xl border border-white/5 animate-in fade-in slide-in-from-right-4 duration-500">
+                             <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Platform AI</span>
+                                <span className="text-xs font-bold text-gray-200">
+                                    {insightCount > 0 ? `Detected ${insightCount} optimizations for this cluster.` : 'Operational health is optimized.'}
+                                </span>
+                             </div>
+                             {insightCount > 0 && (
+                                <button 
+                                    onClick={() => onNavigateToRecommendations?.({ search: warehouse.name })}
+                                    className="ml-4 p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+                                    title="View insights"
                                 >
-                                    <item.icon className={`h-5 w-5 shrink-0`} />
-                                    {isSidebarExpanded && <span>{item.name}</span>}
+                                    <IconLightbulb className="w-5 h-5 text-primary" />
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-
-                <div className="p-2 mt-auto flex-shrink-0">
-                    <div className={`border-t border-border-light ${isSidebarExpanded ? 'mx-2' : ''}`}></div>
-                    <div className={`flex mt-2 ${isSidebarExpanded ? 'justify-end' : 'justify-center'}`}>
-                        <button
-                            onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-                            className="p-1.5 rounded-full hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary"
-                            aria-label={isSidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
-                        >
-                            {isSidebarExpanded ? <IconChevronLeft className="h-5 w-5 text-text-secondary" /> : <IconChevronRight className="h-5 w-5 text-text-secondary" />}
-                        </button>
+                             )}
+                        </div>
                     </div>
-                </div>
-            </aside>
 
-            <main className="flex-1 overflow-y-auto p-4">
-                <div className="flex items-center gap-2 mb-4">
-                    <button onClick={onBack} className="p-1 rounded-full text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors" aria-label="Back to All Warehouses">
-                        <IconChevronLeft className="h-5 w-5" />
-                    </button>
-                    <h1 className="text-2xl font-bold text-text-primary">{warehouse.name}</h1>
-                </div>
-                <p className="mt-1 text-text-secondary">{activeSection}</p>
-                <div className="mt-4">
-                    {renderContent()}
-                </div>
-            </main>
+                    {/* Horizontal Tab Navigation */}
+                    <div className="flex border-b border-border-light overflow-x-auto no-scrollbar gap-8">
+                        {(['Details', 'Query History'] as const).map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${
+                                    activeTab === tab 
+                                    ? 'text-primary' 
+                                    : 'text-text-muted hover:text-text-secondary'
+                                }`}
+                            >
+                                {tab}
+                                {activeTab === tab && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full animate-in fade-in slide-in-from-bottom-1 duration-300" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </header>
+
+                {/* Content Area */}
+                <main className="animate-in fade-in duration-500">
+                    {activeTab === 'Details' ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                            {/* Left Column: Metadata & Config */}
+                            <div className="lg:col-span-4 space-y-6">
+                                <div className="bg-white p-8 rounded-[24px] border border-border-light shadow-sm space-y-8">
+                                    <h3 className="text-sm font-black text-text-strong uppercase tracking-[0.2em] border-b border-border-light pb-4">Configurations</h3>
+                                    <div className="grid grid-cols-1 gap-y-8">
+                                        <DetailItem label="Size" value={warehouse.size} />
+                                        <DetailItem label="Auto Suspend" value="600 seconds" />
+                                        <DetailItem label="Auto Resume" value="Enabled" />
+                                        <DetailItem label="Scaling Policy" value="STANDARD" />
+                                        <DetailItem label="Clusters" value="1 Min / 1 Max" />
+                                        <DetailItem label="Resumed On" value="3 hours ago" />
+                                    </div>
+                                </div>
+                                <PrivilegesTable />
+                            </div>
+
+                            {/* Right Column: Consumption & Trends */}
+                            <div className="lg:col-span-8 space-y-6">
+                                <div className="bg-white p-8 rounded-[24px] border border-border-light shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+                                    <div className="text-center md:text-left">
+                                        <h3 className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-1">Credits Consumed</h3>
+                                        <p className="text-3xl font-black text-text-primary tracking-tight">
+                                            {warehouse.tokens.toLocaleString()} <span className="text-lg font-medium text-text-secondary">cr</span>
+                                        </p>
+                                    </div>
+                                    <div className="h-px w-full md:h-12 md:w-px bg-border-light"></div>
+                                    <div className="text-center md:text-left">
+                                        <h3 className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-1">Peak Utilization</h3>
+                                        <p className="text-3xl font-black text-text-primary tracking-tight">
+                                            {warehouse.peakUtilization}%
+                                        </p>
+                                    </div>
+                                    <div className="h-px w-full md:h-12 md:w-px bg-border-light"></div>
+                                    <div className="text-center md:text-left">
+                                        <h3 className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-1">Queries Run</h3>
+                                        <p className="text-3xl font-black text-text-primary tracking-tight">
+                                            {warehouse.queriesExecuted.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                                <CreditTrendChart />
+                            </div>
+                        </div>
+                    ) : (
+                        <QueryHistoryTable warehouseName={warehouse.name} />
+                    )}
+                </main>
+            </div>
         </div>
     );
 };

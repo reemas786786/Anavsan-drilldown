@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -58,7 +57,7 @@ const SplashScreen: React.FC = () => (
         <div className="loader">
             <div className="logo-container">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="52" viewBox="0 0 48 52" fill="none">
-                    <path d="M26.0245 1.10411C26.5035 0.944589 27.0263 0.947640 27.4289 1.26015C27.8353 1.57579 27.9607 2.08272 27.9091 2.58175C27.8545 3.11164 27.7675 3.64069 27.6909 4.14221C27.6909 4.14221 27.7675 3.64069 27.4289 1.26015C26.0245 1.10411ZM23.0063 10.1675C18.5457 17.0145 14.8187 24.1166 11.563 31.4691C13.3624 30.4149 15.3197 29.6376 17.3675 29.1699L18.3344 28.9598C20.4134 28.5266 22.5251 28.2002 24.6202 27.8323C23.4817 22.1099 22.7559 16.2408 23.0063 10.1675Z" fill="url(#paint0_linear_splash)" stroke="url(#paint1_linear_splash)" stroke-width="0.75"/>
+                    <path d="M26.0245 1.10411C26.5035 0.944589 27.0263 0.947640 27.4289 1.26015C27.8353 1.57579 27.9607 2.08272 27.9091 2.58175C27.6909 4.14221C27.7675 3.64069 27.4289 1.26015C26.0245 1.10411ZM23.0063 10.1675C18.5457 17.0145 14.8187 24.1166 11.563 31.4691C13.3624 30.4149 15.3197 29.6376 17.3675 29.1699L18.3344 28.9598C20.4134 28.5266 22.5251 28.2002 24.6202 27.8323C23.4817 22.1099 22.7559 16.2408 23.0063 10.1675Z" fill="url(#paint0_linear_splash)" stroke="url(#paint1_linear_splash)" stroke-width="0.75"/>
                     <defs>
                         <linearGradient id="paint0_linear_splash" x1="23.9999" y1="1.54252" x2="23.9999" y2="50.4578" gradientUnits="userSpaceOnUse">
                             <stop stop-color="#6932D5"/>
@@ -81,7 +80,7 @@ const App: React.FC = () => {
   
   const [activePage, setActivePage] = useState<Page>('AI data cloud overview');
   const [activeSubPage, setActiveSubPage] = useState<string | undefined>();
-  const [resourceSummaryTab, setResourceSummaryTab] = useState<string>('Total credits');
+  const [resourceSummaryTab, setResourceSummaryTab] = useState<string>('Accounts');
   const [recommendationFilters, setRecommendationFilters] = useState<any>(null);
   
   const [isSidebarOpen, setSidebarOpen] = useState(true); 
@@ -270,7 +269,12 @@ const App: React.FC = () => {
       setActivePage('Accounts');
   };
 
-  const handleSelectAccount = (account: Account, initialPage?: string) => {
+  const handleSelectAccount = (account: Account, initialPage?: string, sourceTab?: string) => {
+      // If navigating from Resource Summary, preserve the tab
+      if (activePage === 'Resource summary' && sourceTab) {
+          setResourceSummaryTab(sourceTab);
+      }
+      
       setBackNavigationPage(activePage);
       setSelectedAccount(account);
       setSidebarOpen(false); 
@@ -324,7 +328,7 @@ const App: React.FC = () => {
         account={selectedAccount} 
         accounts={accounts} 
         onSwitchAccount={setSelectedAccount} 
-        onBackToAccounts={() => handleSetActivePage(backNavigationPage)}
+        onBackToAccounts={() => handleSetActivePage(backNavigationPage, undefined, { tab: resourceSummaryTab })}
         backLabel={`Back to ${backNavigationPage}`}
         sqlFiles={sqlFiles} 
         onSaveQueryClick={() => setSidePanel({type: 'saveQuery'})} 

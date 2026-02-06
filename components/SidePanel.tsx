@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { IconClose } from '../constants';
 
@@ -101,8 +100,8 @@ const SidePanel: React.FC<SidePanelProps> = ({ isOpen, onClose, title, children,
               </div>
             )}
             
-            {/* Content */}
-            <div className="relative flex-1 overflow-y-auto no-scrollbar">
+            {/* Content Container - No internal scroll, flex child takes over */}
+            <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
               {children}
             </div>
           </div>
