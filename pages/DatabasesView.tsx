@@ -123,6 +123,7 @@ const DatabaseListView: React.FC<{ onSelectDatabase: (databaseId: string) => voi
                         <thead className="bg-table-header-bg text-[10px] text-text-muted font-bold sticky top-0 z-10 border-b border-border-color">
                             <tr>
                                 <th scope="col" className="px-6 py-4 border-b border-border-color">Database name</th>
+                                <th scope="col" className="px-6 py-4 border-b border-border-color">Storage credits</th>
                                 <th scope="col" className="px-6 py-4 border-b border-border-color">Size (GB)</th>
                                 <th scope="col" className="px-6 py-4 border-b border-border-color">% of Total</th>
                                 <th scope="col" className="px-6 py-4 border-b border-border-color">Cost ($)</th>
@@ -138,6 +139,7 @@ const DatabaseListView: React.FC<{ onSelectDatabase: (databaseId: string) => voi
                                             {db.name}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-4 font-black text-primary">{db.credits?.toLocaleString() || '0'} cr</td>
                                     <td className="px-6 py-4 font-black text-text-strong">{db.sizeGB.toLocaleString()}</td>
                                     <td className="px-6 py-4 font-medium text-text-muted">{totalStorage > 0 ? ((db.sizeGB / totalStorage) * 100).toFixed(1) : 0}%</td>
                                     <td className="px-6 py-4 font-black text-text-strong">${db.cost.toLocaleString()}</td>

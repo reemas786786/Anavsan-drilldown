@@ -150,16 +150,20 @@ const StorageSummaryView: React.FC<{ onSelectDatabase: (databaseId: string) => v
                 {/* Widget 1: Total Storage & Spend */}
                 <WidgetCard>
                     <div className="flex items-center">
-                        <h3 className="text-base font-semibold text-text-strong">Total storage used and spend</h3>
-                        <InfoTooltip text="Overall storage usage and total spend for the selected time period." />
+                        <h3 className="text-base font-semibold text-text-strong">Total storage summary</h3>
+                        <InfoTooltip text="Overall storage usage and associated credit/monetary spend for the selected time period." />
                     </div>
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-surface-nested p-4 rounded-3xl sm:col-span-2">
+                            <p className="text-sm text-text-secondary">Storage credits</p>
+                            <p className="text-3xl font-black text-primary mt-1">{storageSummaryData.totalCredits.toLocaleString()} cr</p>
+                        </div>
                         <div className="bg-surface-nested p-4 rounded-3xl">
                             <p className="text-sm text-text-secondary">Total storage used</p>
                             <p className="text-2xl font-bold text-text-primary mt-1">{storageSummaryData.totalStorageGB.toLocaleString()} GB</p>
                         </div>
                         <div className="bg-surface-nested p-4 rounded-3xl">
-                            <p className="text-sm text-text-secondary">Total spend</p>
+                            <p className="text-sm text-text-secondary">Est. monthly cost</p>
                             <p className="text-2xl font-bold text-text-primary mt-1">${storageSummaryData.totalSpend.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                         </div>
                     </div>

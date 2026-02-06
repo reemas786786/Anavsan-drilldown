@@ -236,8 +236,8 @@ export const costBreakdownData = [
 ];
 
 export const databasesData: Database[] = [
-    { id: 'db-1', name: 'PROD_DB', sizeGB: 12500, cost: 3200, tableCount: 45, userCount: 12, users: [] },
-    { id: 'db-2', name: 'ANALYTICS_DB', sizeGB: 8400, cost: 2100, tableCount: 32, userCount: 8, users: [] }
+    { id: 'db-1', name: 'PROD_DB', sizeGB: 12500, cost: 3200, credits: 1250, tableCount: 45, userCount: 12, users: [] },
+    { id: 'db-2', name: 'ANALYTICS_DB', sizeGB: 8400, cost: 2100, credits: 850, tableCount: 32, userCount: 8, users: [] }
 ];
 export const storageByTypeData: StorageByTypeItem[] = [
     { type: 'Active', storageGB: 45000, cost: 2500, color: '#6932D5' },
@@ -274,7 +274,7 @@ export const costSpendForecastData = [];
 export const costForecastByTierData = [];
 export const costAnomalyAlertsData: AnomalyAlertItem[] = [];
 export const costSavingsProjectionData = { message: 'AI projects 15% savings', savingsPercentage: 15 };
-export const storageSummaryData = { totalStorageGB: 45000, totalSpend: 2500 };
+export const storageSummaryData = { totalStorageGB: 45000, totalSpend: 2500, totalCredits: 2100 };
 
 export const recommendationsData: Recommendation[] = (function() {
     const recs: Recommendation[] = [];

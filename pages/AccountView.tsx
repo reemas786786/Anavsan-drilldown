@@ -32,7 +32,7 @@ import ApplicationsView from './ApplicationsView';
 import WorkloadsListView from './WorkloadsListView';
 import AccountServicesView from './AccountServicesView';
 import AccountUsersListView from './AccountUsersListView';
-import { cortexModelsData } from '../data/dummyData';
+import { cortexModelsData, storageSummaryData } from '../data/dummyData';
 
 interface AccountViewProps {
     account: Account;
@@ -292,6 +292,13 @@ const StorageTabbedView: React.FC<{
                     <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Storage</h1>
                     <p className="text-sm text-text-secondary font-medium mt-1 mb-2">Explore and manage storage costs, table health, and database efficiency.</p>
                 </div>
+                
+                <div className="flex flex-wrap items-center gap-3 overflow-x-auto no-scrollbar pb-1">
+                    <KPILabel label="Storage Credits" value={`${storageSummaryData.totalCredits.toLocaleString()} cr`} />
+                    <KPILabel label="Total Size" value={`${(storageSummaryData.totalStorageGB / 1000).toFixed(1)} TB`} />
+                    <KPILabel label="Est. Monthly Cost" value={`$${storageSummaryData.totalSpend.toLocaleString()}`} />
+                </div>
+
                 <div className="flex gap-8">
                     {(['Storage overview', 'Databases'] as const).map(tab => (
                         <button

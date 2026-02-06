@@ -188,7 +188,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                             accountName: acc.name,
                             accountIdentifier: acc.identifier,
                             totalRaw: storageCredits,
-                            total: formatK(storageCredits),
+                            storage: formatK(storageCredits), // Corrected property name from 'total' to 'storage' to match lookup
                             sizeRaw: acc.storageGB,
                             size: acc.storageGB >= 1000 ? `${(acc.storageGB / 1000).toFixed(1)} TB` : `${acc.storageGB} GB`,
                             unusedRaw: unusedGB,

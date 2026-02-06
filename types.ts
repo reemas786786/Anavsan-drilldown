@@ -353,6 +353,8 @@ export interface Database {
     name: string;
     sizeGB: number;
     cost: number;
+    // Added credits to solve missing property error in DatabasesView.tsx and dummyData.ts
+    credits: number;
     tableCount: number;
     userCount: number;
     users: { id: string, name: string }[];
