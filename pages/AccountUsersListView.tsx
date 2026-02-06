@@ -22,9 +22,10 @@ const UserAvatar: React.FC<{ name: string }> = ({ name }) => {
 
 interface AccountUsersListViewProps {
     accountName: string;
+    onNavigateToRecommendations?: (filters: { search?: string; account?: string }) => void;
 }
 
-const AccountUsersListView: React.FC<AccountUsersListViewProps> = ({ accountName }) => {
+const AccountUsersListView: React.FC<AccountUsersListViewProps> = ({ accountName, onNavigateToRecommendations }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -92,11 +93,10 @@ const AccountUsersListView: React.FC<AccountUsersListViewProps> = ({ accountName
                         <thead className="bg-[#F8F9FA] sticky top-0 z-10 font-bold uppercase tracking-widest text-[10px] text-text-muted">
                             <tr>
                                 <th className="px-6 py-4 border-b border-border-light">User name</th>
-                                <th className="px-6 py-4 border-b border-border-light">Active role</th>
+                                <th className="px-6 py-4 border-b border-border-light">Role</th>
                                 <th className="px-6 py-4 border-b border-border-light">Credits</th>
                                 <th className="px-6 py-4 border-b border-border-light">Queries</th>
-                                <th className="px-6 py-4 border-b border-border-light">Last active</th>
-                                <th className="px-6 py-4 border-b border-border-light text-right">Action</th>
+                                <th className="px-6 py-4 border-b border-border-light text-right">Insights</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-border-light">
@@ -120,13 +120,16 @@ const AccountUsersListView: React.FC<AccountUsersListViewProps> = ({ accountName
                                     <td className="px-6 py-5">
                                         <span className="text-sm font-medium text-text-secondary">{row.queries.toLocaleString()}</span>
                                     </td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-xs font-bold text-text-muted">{row.lastActive}</span>
-                                    </td>
                                     <td className="px-6 py-5 text-right">
-                                        <button className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all">
-                                            <IconChevronRight className="w-5 h-5" />
-                                        </button>
+                                        <div className="flex items-center justify-end">
+                                            <button 
+                                                onClick={() => onNavigateToRecommendations?.({ search: row.name })}
+                                                className="inline-flex items-center gap-1 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                            >
+                                                <span className="text-xs font-black">{Math.floor(Math.random() * 3) + 1}</span>
+                                                <span className="text-[9px] font-bold uppercase">Insights</span>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

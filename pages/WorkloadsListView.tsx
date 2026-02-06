@@ -103,16 +103,13 @@ const WorkloadsListView: React.FC<WorkloadsListViewProps> = ({ accountName, onNa
                                         <span className="text-sm font-black text-text-strong">{row.credits.toLocaleString()}</span>
                                     </td>
                                     <td className="px-6 py-5 text-right">
-                                        <div className="flex items-center justify-end gap-3">
+                                        <div className="flex items-center justify-end">
                                             <button 
                                                 onClick={() => onNavigateToRecommendations?.({ search: row.name })}
                                                 className="inline-flex items-center gap-1 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 hover:bg-primary hover:text-white transition-all shadow-sm"
                                             >
                                                 <span className="text-xs font-black">{Math.floor(Math.random() * 5) + 1}</span>
                                                 <span className="text-[9px] font-bold uppercase">Insights</span>
-                                            </button>
-                                            <button className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all">
-                                                <IconChevronRight className="w-5 h-5" />
                                             </button>
                                         </div>
                                     </td>

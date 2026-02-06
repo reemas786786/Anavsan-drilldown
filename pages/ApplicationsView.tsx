@@ -373,7 +373,7 @@ const ApplicationsListView: React.FC<{
                                     <td onClick={() => onSelect(app)} className="px-6 py-5 font-medium text-text-primary">{app.warehouseCredits.toLocaleString()}</td>
                                     <td onClick={() => onSelect(app)} className="px-6 py-5 font-medium text-text-primary">{app.storageCredits.toLocaleString()}</td>
                                     <td className="px-6 py-5 text-right">
-                                        <div className="flex items-center justify-end gap-3">
+                                        <div className="flex items-center justify-end">
                                             <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -383,9 +383,6 @@ const ApplicationsListView: React.FC<{
                                             >
                                                 <span className="text-xs font-black">{app.insightCount}</span>
                                                 <span className="text-[9px] font-bold uppercase">Insights</span>
-                                            </button>
-                                            <button onClick={() => onSelect(app)} className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all">
-                                                <IconChevronRight className="w-5 h-5" />
                                             </button>
                                         </div>
                                     </td>

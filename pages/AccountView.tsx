@@ -239,16 +239,13 @@ const CortexListView: React.FC<{
                                         <td className="px-6 py-5 font-medium text-text-primary">{model.tokens}</td>
                                         <td className="px-6 py-5 font-black text-text-strong">{model.credits}K</td>
                                         <td className="px-6 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-3">
-                                                <div className="inline-flex items-center gap-1.5 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
-                                                    <span className="text-xs font-black text-primary">{model.insightCount}</span>
-                                                    <span className="text-[9px] font-bold text-text-secondary uppercase">Insights</span>
-                                                </div>
+                                            <div className="flex items-center justify-end">
                                                 <button 
                                                     onClick={() => onNavigateToRecommendations?.({ search: model.name })}
-                                                    className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all"
+                                                    className="inline-flex items-center gap-1.5 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 hover:bg-primary hover:text-white transition-all shadow-sm"
                                                 >
-                                                    <IconChevronRight className="w-5 h-5" />
+                                                    <span className="text-xs font-black">{model.insightCount}</span>
+                                                    <span className="text-[9px] font-bold uppercase">Insights</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -476,7 +473,7 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
             case 'Services':
                 return <AccountServicesView accountName={account.name} onNavigateToRecommendations={onNavigateToRecommendations} />;
             case 'Users':
-                return <AccountUsersListView accountName={account.name} />;
+                return <AccountUsersListView accountName={account.name} onNavigateToRecommendations={onNavigateToRecommendations} />;
             case 'Cortex':
                 return <CortexListView onNavigateToRecommendations={onNavigateToRecommendations} />;
             default:
