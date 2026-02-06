@@ -29,6 +29,9 @@ import AllWarehouses from './AllWarehouses';
 import WarehouseDetailView from './WarehouseDetailView';
 import ContextualSidebar from '../components/ContextualSidebar';
 import ApplicationsView from './ApplicationsView';
+import WorkloadsListView from './WorkloadsListView';
+import AccountServicesView from './AccountServicesView';
+import AccountUsersListView from './AccountUsersListView';
 import { cortexModelsData } from '../data/dummyData';
 
 interface AccountViewProps {
@@ -207,7 +210,7 @@ const CortexListView: React.FC<{
                     </div>
                 </div>
 
-                <div className="overflow-y-auto flex-grow min-h-0">
+                <div className="overflow-y-auto flex-grow min-h-0 no-scrollbar">
                     <table className="w-full text-[13px] border-separate border-spacing-0">
                         <thead className="bg-[#F8F9FA] sticky top-0 z-10">
                             <tr>
@@ -273,10 +276,9 @@ const StorageTabbedView: React.FC<{
 }> = ({ onSetBigScreenWidget, selectedDatabaseId, setSelectedDatabaseId }) => {
     const [activeTab, setActiveTab] = useState<'Storage overview' | 'Databases'>('Storage overview');
 
-    // If a database is selected, we force rendering of the detail view regardless of tab
     if (selectedDatabaseId) {
         return (
-            <div className="px-6 pt-4 pb-12">
+            <div className="px-6 pt-4 pb-12 bg-background h-full">
                 <DatabasesView 
                     selectedDatabaseId={selectedDatabaseId} 
                     onSelectDatabase={setSelectedDatabaseId} 
@@ -288,10 +290,10 @@ const StorageTabbedView: React.FC<{
 
     return (
         <div className="flex flex-col h-full bg-background">
-            <header className="px-6 pt-4 pb-0 flex flex-col gap-6 flex-shrink-0 bg-background border-b border-border-light mb-6">
+            <header className="px-6 pt-4 pb-0 flex flex-col gap-6 flex-shrink-0 bg-surface border-b border-border-light mb-0">
                 <div>
                     <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Storage</h1>
-                    <p className="text-sm text-text-secondary font-medium mt-1">Explore and manage storage costs, table health, and database efficiency.</p>
+                    <p className="text-sm text-text-secondary font-medium mt-1 mb-2">Explore and manage storage costs, table health, and database efficiency.</p>
                 </div>
                 <div className="flex gap-8">
                     {(['Storage overview', 'Databases'] as const).map(tab => (
@@ -312,7 +314,7 @@ const StorageTabbedView: React.FC<{
                     ))}
                 </div>
             </header>
-            <main className="flex-1 px-6 pb-12 overflow-y-auto no-scrollbar">
+            <main className="flex-1 px-6 pt-6 pb-12 overflow-y-auto no-scrollbar">
                 {activeTab === 'Storage overview' ? (
                     <StorageSummaryView 
                         onSelectDatabase={(id) => { setActiveTab('Databases'); setSelectedDatabaseId(id === '__view_all__' ? null : id); }} 
@@ -357,14 +359,13 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
 
     const handleBackFromTool = () => {
         onPageChange(navigationSource || 'All queries');
-        onAnalyzeQuery(null, ''); // This clears the analyzingQuery state and source
+        onAnalyzeQuery(null, ''); 
     };
 
     const handleSidebarPageChange = (newPage: string) => {
         if (selectedApplicationId) {
             setSelectedApplicationId(null);
         }
-        // Reset specific drill-down states when changing primary section via sidebar
         setSelectedWarehouse(null);
         setSelectedQuery(null);
         setSelectedPullRequest(null);
@@ -470,6 +471,12 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
                         setSelectedDatabaseId={setSelectedDatabaseId}
                     />
                 );
+            case 'Workloads':
+                return <WorkloadsListView accountName={account.name} onNavigateToRecommendations={onNavigateToRecommendations} />;
+            case 'Services':
+                return <AccountServicesView accountName={account.name} onNavigateToRecommendations={onNavigateToRecommendations} />;
+            case 'Users':
+                return <AccountUsersListView accountName={account.name} />;
             case 'Cortex':
                 return <CortexListView onNavigateToRecommendations={onNavigateToRecommendations} />;
             default:
@@ -478,34 +485,36 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
     };
 
     const isDeepDrillDown = !!selectedWarehouse || !!selectedQuery || !!selectedPullRequest || isDatabaseDetailView;
-    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'Warehouses', 'Applications', 'Cortex', 'Storage'].includes(activePage);
+    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'Warehouses', 'Applications', 'Cortex', 'Storage', 'Workloads', 'Services', 'Users'].includes(activePage);
 
     return (
-        <div className="flex h-full overflow-hidden">
-            <ContextualSidebar 
-                account={account} 
-                accounts={accounts} 
-                onSwitchAccount={onSwitchAccount} 
-                activePage={activePage} 
-                onPageChange={handleSidebarPageChange} 
-                onBackToAccounts={onBackToAccounts} 
-                backLabel={backLabel}
-                selectedApplicationId={selectedApplicationId}
-            />
-            <main className="flex-1 flex flex-col overflow-hidden relative">
-                <div className="bg-surface shadow-sm flex-shrink-0 z-10 border-b border-border-light">
-                    <div className="h-[42px] px-6 flex items-center">
-                        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex flex-col h-full overflow-hidden bg-background">
+            <div className="flex flex-1 overflow-hidden">
+                <ContextualSidebar 
+                    account={account} 
+                    accounts={accounts} 
+                    onSwitchAccount={onSwitchAccount} 
+                    activePage={activePage} 
+                    onPageChange={handleSidebarPageChange} 
+                    onBackToAccounts={onBackToAccounts} 
+                    backLabel={backLabel}
+                    selectedApplicationId={selectedApplicationId}
+                />
+                <main className="flex-1 flex flex-col overflow-hidden relative">
+                    <div className="bg-surface shadow-sm flex-shrink-0 z-10 border-b border-border-light">
+                        <div className="h-[42px] px-6 flex items-center">
+                            <Breadcrumb items={breadcrumbItems} />
+                        </div>
                     </div>
-                </div>
-                
-                <div className={`flex-1 overflow-auto bg-background ${isDeepDrillDown ? '' : (isListView && !selectedWarehouse && activePage !== 'Storage' ? "" : (activePage === 'Storage' ? "" : "px-6 pt-4 pb-12"))}`}>
-                    <div className="lg:hidden p-4 pb-0">
-                         <MobileNav activePage={activePage} onPageChange={handleSidebarPageChange} accountNavItems={accountNavItems} />
+                    
+                    <div className={`flex-1 overflow-auto no-scrollbar ${isDeepDrillDown || activePage === 'Storage' ? '' : (isListView && !selectedWarehouse ? "" : "px-6 pt-4 pb-12")}`}>
+                        <div className="lg:hidden p-4 pb-0">
+                             <MobileNav activePage={activePage} onPageChange={handleSidebarPageChange} accountNavItems={accountNavItems} />
+                        </div>
+                        {renderContent()}
                     </div>
-                    {renderContent()}
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     );
 };

@@ -82,10 +82,10 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 'Accounts': 'Account overview',
                 'Compute': 'Warehouses',
                 'Storage': 'Storage',
-                'Workloads': 'Warehouses',
-                'Services': 'Account overview',
+                'Workloads': 'Workloads',
+                'Services': 'Services',
                 'Cortex': 'Cortex',
-                'User': 'Account overview',
+                'User': 'Users',
                 'Queries': 'All queries'
             };
             
@@ -304,8 +304,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
             case 'Workloads':
                 return [
                     { label: 'Total Workloads', value: '52' },
-                    { label: 'Total Workload Spend', value: '168K cr' },
-                    { label: 'Avg. Warehouse Idle Time', value: '16%' }
+                    { label: 'Total Workload Spend', value: '168K cr' }
                 ];
             case 'Services':
                 return [

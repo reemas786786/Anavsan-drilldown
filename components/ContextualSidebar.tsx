@@ -41,7 +41,6 @@ const ContextualNavItem: React.FC<{
     const isSubMenuOpen = openSubMenus[item.name];
     const isSomeChildActive = hasChildren && item.children.some(c => c.name === activePage);
 
-    // FIX: Only treat the page as active if we are NOT on a particular application detail view
     const isItemActuallyActive = (activePage === item.name) && !(item.name === 'Applications' && selectedApplicationId);
 
     if (isSidebarExpanded) {
@@ -52,11 +51,11 @@ const ContextualNavItem: React.FC<{
                         onClick={() => onPageChange(item.name)}
                         className={`w-full flex items-center gap-3 text-left p-2 rounded-lg text-sm transition-colors ${
                             isItemActuallyActive
-                            ? 'bg-[#EFE9FE] text-primary font-semibold'
+                            ? 'bg-primary/5 text-primary font-bold'
                             : 'text-text-strong font-medium hover:bg-surface-hover'
                         }`}
                     >
-                        <item.icon className={`h-5 w-5 shrink-0`} />
+                        <item.icon className={`h-5 w-5 shrink-0 ${isItemActuallyActive ? 'text-primary' : 'text-text-strong'}`} />
                         <span>{item.name}</span>
                     </button>
                 </li>
@@ -76,14 +75,14 @@ const ContextualNavItem: React.FC<{
                     {isSubMenuOpen ? <ChevronUpIcon className="h-4 w-4 text-text-secondary" /> : <ChevronDownIcon className="h-4 w-4 text-text-secondary" />}
                 </button>
                 {isSubMenuOpen && (
-                    <ul className="pl-5 mt-1 space-y-0.5">
+                    <ul className="pl-5 mt-1 space-y-0.5 border-l border-border-light ml-4">
                         {item.children.map(child => (
                             <li key={child.name}>
                                 <button
                                     onClick={() => onPageChange(child.name)}
                                     className={`w-full text-left flex items-center gap-3 py-1.5 px-3 rounded-lg text-sm transition-colors ${
                                         activePage === child.name 
-                                        ? 'text-primary font-medium' 
+                                        ? 'text-primary font-bold bg-primary/5' 
                                         : 'text-text-secondary hover:text-text-primary'
                                     }`}
                                 >
@@ -108,7 +107,7 @@ const ContextualNavItem: React.FC<{
                     onClick={() => onPageChange(hasChildren ? item.children[0].name : item.name)}
                     className={`w-full group relative flex items-center justify-center p-2 rounded-lg text-sm transition-colors ${
                         isActive
-                        ? 'bg-[#EFE9FE] text-primary'
+                        ? 'bg-primary/5 text-primary'
                         : 'text-text-strong hover:bg-surface-hover'
                     }`}
                 >
@@ -176,19 +175,16 @@ const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ account, accounts
         };
     }, []);
 
-    // Set default open submenu based on active page or local storage
     useEffect(() => {
-        // Try to find which parent contains the active page
-        let parentToOpen = accountNavItems.find(item => item.children.some(child => child.name === activePage))?.name;
+        // Find the parent menu that contains the current active page
+        const parentToOpen = accountNavItems.find(item => 
+            item.children.some(child => child.name === activePage)
+        )?.name;
         
-        if (!parentToOpen) {
-            const savedMenu = localStorage.getItem('anavsan_last_open_submenu');
-            const defaultMenu = 'Query performance';
-            const isValidSavedMenu = accountNavItems.some(item => item.name === savedMenu);
-            parentToOpen = isValidSavedMenu ? savedMenu! : defaultMenu;
+        if (parentToOpen) {
+            setOpenSubMenus(prev => ({ ...prev, [parentToOpen]: true }));
         }
-
-        setOpenSubMenus(prev => ({ ...prev, [parentToOpen!]: true }));
+        // Fallback or "Query performance" default removed to satisfy user request.
     }, [account.id, activePage]);
 
     const handleSubMenuToggle = (itemName: string) => {
@@ -206,19 +202,18 @@ const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ account, accounts
     };
 
     return (
-        <aside className={`bg-surface flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out border-r border-border-light ${isSidebarExpanded ? 'w-64' : 'w-16'}`}>
-            <div className="flex-shrink-0 border-b border-border-light">
+        <aside className={`bg-surface flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out border-r border-border-light h-full ${isSidebarExpanded ? 'w-64' : 'w-16'}`}>
+            <div className="flex-shrink-0 h-[42px] flex items-center border-b border-border-light overflow-hidden">
                 <button
                     onClick={onBackToAccounts}
-                    className={`w-full flex items-center gap-3 p-4 text-text-secondary hover:text-primary transition-colors font-bold text-xs ${isSidebarExpanded ? '' : 'justify-center'}`}
+                    className={`h-full w-full flex items-center gap-2 px-4 text-text-muted hover:text-primary transition-colors font-bold text-[10px] uppercase tracking-widest ${isSidebarExpanded ? '' : 'justify-center'}`}
                 >
-                    <IconChevronLeft className="h-4 w-4" />
-                    {isSidebarExpanded && <span>{backLabel}</span>}
+                    <IconChevronLeft className="h-3.5 w-3.5" />
+                    {isSidebarExpanded && <span className="truncate">{backLabel}</span>}
                 </button>
             </div>
             
-            <div className={`p-2 flex-shrink-0 transition-all ${isSidebarExpanded ? '' : 'flex justify-center'}`}>
-                {/* Account Switcher */}
+            <div className={`p-4 flex-shrink-0 transition-all ${isSidebarExpanded ? '' : 'flex justify-center'}`}>
                 <div 
                     ref={accountSwitcherRef}
                     className="relative w-full"
@@ -227,8 +222,8 @@ const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ account, accounts
                         onClick={() => setIsAccountSwitcherOpen(prev => !prev)}
                         className={`w-full flex items-center transition-colors group relative ${
                             isSidebarExpanded 
-                            ? 'text-left p-2 rounded-lg bg-background hover:bg-surface-hover border border-border-light justify-between' 
-                            : 'h-10 w-10 rounded-full bg-surface-nested hover:bg-surface-hover justify-center'
+                            ? 'text-left p-1.5 rounded-lg bg-background hover:bg-surface-hover border border-border-light justify-between shadow-sm' 
+                            : 'h-10 w-10 rounded-full bg-surface-nested hover:bg-surface-hover justify-center border border-border-light shadow-sm'
                         }`}
                         aria-haspopup="true"
                         aria-expanded={isAccountSwitcherOpen}
@@ -238,26 +233,26 @@ const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ account, accounts
                             <>
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <AccountAvatar name={account.name} />
-                                    <span className="text-sm font-bold text-text-primary truncate">{account.name}</span>
+                                    <span className="text-xs font-bold text-text-strong truncate">{account.name}</span>
                                 </div>
-                                <IconChevronDown className={`h-5 w-5 text-text-secondary transition-transform ${isAccountSwitcherOpen ? 'rotate-180' : ''}`} />
+                                <IconChevronDown className={`h-4 w-4 text-text-muted transition-transform ${isAccountSwitcherOpen ? 'rotate-180' : ''}`} />
                             </>
                         ) : (
                             <AccountAvatar name={account.name} />
                         )}
                     </button>
                     {isAccountSwitcherOpen && (
-                        <div className={`absolute z-20 mt-2 rounded-lg bg-surface shadow-lg p-2 border border-border-color ${isSidebarExpanded ? 'w-full' : 'w-64 left-full ml-2 -top-2'}`}>
-                            <ul className="max-h-60 overflow-y-auto">
+                        <div className={`absolute z-30 mt-2 rounded-xl bg-surface shadow-2xl p-2 border border-border-color ${isSidebarExpanded ? 'w-full' : 'w-64 left-full ml-2 -top-2'}`}>
+                            <ul className="max-h-60 overflow-y-auto no-scrollbar">
                                 {accounts.map(acc => {
                                     const isActive = acc.id === account.id;
                                     return (
                                         <li key={acc.id}>
                                             <button
                                                 onClick={() => { onSwitchAccount(acc); setIsAccountSwitcherOpen(false); }}
-                                                className={`w-full text-left flex items-center justify-between gap-2 p-2 rounded-lg text-sm font-medium transition-colors ${
+                                                className={`w-full text-left flex items-center justify-between gap-2 p-2.5 rounded-lg text-xs font-bold transition-colors ${
                                                     isActive
-                                                        ? 'bg-primary/10 text-primary font-semibold'
+                                                        ? 'bg-primary/10 text-primary'
                                                         : 'hover:bg-surface-hover text-text-secondary hover:text-text-primary'
                                                 }`}
                                             >
@@ -265,7 +260,7 @@ const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ account, accounts
                                                     <AccountAvatar name={acc.name} />
                                                     <span className="truncate">{acc.name}</span>
                                                 </div>
-                                                {isActive && <IconCheck className="h-5 w-5 text-primary flex-shrink-0" />}
+                                                {isActive && <IconCheck className="h-4 w-4 text-primary flex-shrink-0" />}
                                             </button>
                                         </li>
                                     );
@@ -276,7 +271,7 @@ const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ account, accounts
                 </div>
             </div>
 
-            <nav className={`flex-grow px-2 ${isSidebarExpanded ? 'overflow-y-auto' : ''}`}>
+            <nav className={`flex-grow px-3 space-y-1 ${isSidebarExpanded ? 'overflow-y-auto' : ''} no-scrollbar`}>
                 <ul className="space-y-1">
                     {accountNavItems.map(item => (
                         <ContextualNavItem
@@ -293,17 +288,16 @@ const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ account, accounts
                 </ul>
             </nav>
 
-            <div className="p-2 mt-auto flex-shrink-0">
-                <div className={`border-t border-border-light ${isSidebarExpanded ? 'mx-2' : ''}`}></div>
-                <div className={`flex mt-2 ${isSidebarExpanded ? 'justify-end' : 'justify-center'}`}>
+            <div className="p-3 mt-auto flex-shrink-0 border-t border-border-light">
+                <div className={`flex ${isSidebarExpanded ? 'justify-end' : 'justify-center'}`}>
                     <button
                         onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-                        className="p-2 rounded-full hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="p-2 rounded-full text-text-muted hover:bg-surface-hover hover:text-primary transition-all focus:outline-none"
                         aria-label={isSidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
                     >
                         {isSidebarExpanded 
-                            ? <IconChevronLeft className="h-5 w-5 text-text-secondary" /> 
-                            : <IconChevronRight className="h-5 w-5 text-text-secondary" />
+                            ? <IconChevronLeft className="h-5 w-5" /> 
+                            : <IconChevronRight className="h-5 w-5" />
                         }
                     </button>
                 </div>
