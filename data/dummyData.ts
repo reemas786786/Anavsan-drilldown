@@ -1,4 +1,3 @@
-
 import { 
     Account, DashboardItem, SQLFile, TopQuery, OptimizationOpportunity, Warehouse, User, Widget, 
     SimilarQuery, QueryListItem, QueryStatus, QueryType, QuerySeverity, StorageBreakdownItem, 
@@ -28,6 +27,28 @@ export const cortexModelsData: CortexModel[] = [
     { id: 'm-4', name: 're-ranker', inputTokens: '180K', outputTokens: '60K', tokens: '240K', credits: 0.2, insightCount: 1 },
     { id: 'm-5', name: 'text-embedding-gecko', inputTokens: '2.8M', outputTokens: '300K', tokens: '3.1M', credits: 0.8, insightCount: 0 },
     { id: 'm-6', name: 'jamba-instruct', inputTokens: '80K', outputTokens: '70K', tokens: '150K', credits: 0.4, insightCount: 1 },
+];
+
+export const workloadsData = [
+    { id: 'wl-1', account: 'Finance Prod', workloads: 18, credits: 61400, queryCount: 88200, avgRuntime: '4.6s', idleTime: '17%' },
+    { id: 'wl-2', account: 'Sales Prod', workloads: 14, credits: 52800, queryCount: 71300, avgRuntime: '3.9s', idleTime: '13%' },
+    { id: 'wl-3', account: 'Marketing Dev', workloads: 9, credits: 29600, queryCount: 41200, avgRuntime: '5.8s', idleTime: '24%' },
+    { id: 'wl-4', account: 'Data Platform', workloads: 11, credits: 24100, queryCount: 38900, avgRuntime: '3.5s', idleTime: '11%' },
+];
+
+export const servicesData = [
+    { id: 'svc-1', type: 'SEARCH_OPTIMIZATION', account: 'Finance Prod', credits: 1230, count: 6, queryCount: 18200, trend: '↑ 12%' },
+    { id: 'svc-2', type: 'QUERY_ACCELERATION', account: 'Retail Prod', credits: 2840, count: 4, queryCount: 41600, trend: '↑ 21%' },
+    { id: 'svc-3', type: 'SERVERLESS_TASK', account: 'Risk Dev', credits: 420, count: 3, queryCount: 6200, trend: '↓ 4%' },
+    { id: 'svc-4', type: 'AUTO_CLUSTERING', account: 'Marketing QA', credits: 310, count: 2, queryCount: 2900, trend: '↑ 6%' },
+    { id: 'svc-5', type: 'AI_SERVICES', account: 'Supply Prod', credits: 1980, count: 5, queryCount: 14400, trend: '↑ 17%' },
+];
+
+export const vampireSpendData = [
+    { name: 'Finance Prod', compute: 12000, cloud: 1450, isAlert: true },
+    { name: 'Account B', compute: 8500, cloud: 420, isAlert: false },
+    { name: 'Account C', compute: 7200, cloud: 680, isAlert: false },
+    { name: 'Account D', compute: 3100, cloud: 350, isAlert: true },
 ];
 
 export const accountApplicationsData: Application[] = [
@@ -68,20 +89,14 @@ export const resourceSnapshotData = {
     compute: '44.25K',
 };
 
-export const finopsRecommendations = [
-    { id: 'rec-1', title: 'Idle Warehouse', tag: 'WH', description: 'Warehouse COMPUTE_WH has been idle for 2 hours.' },
-    { id: 'rec-2', title: 'Table Scan', tag: 'Query', description: 'Query q-9482103 is performing a full table scan on FACT_SALES.' },
-    { id: 'rec-3', title: 'Stale Data', tag: 'Storage', description: 'Table STG_RAW_LOGS has not been accessed in over 90 days.' },
-];
-
 export const spendTrendsData = [
-    { date: 'Nov 14', total: 1200, warehouse: 1000, storage: 200 },
-    { date: 'Nov 15', total: 1450, warehouse: 1200, storage: 250 },
-    { date: 'Nov 16', total: 1100, warehouse: 900, storage: 200 },
-    { date: 'Nov 17', total: 1600, warehouse: 1400, storage: 200 },
-    { date: 'Nov 18', total: 1300, warehouse: 1100, storage: 200 },
-    { date: 'Nov 19', total: 1800, warehouse: 1500, storage: 300 },
-    { date: 'Nov 20', total: 1550, warehouse: 1300, storage: 250 },
+    { date: 'Nov 14', total: 1200, warehouse: 1000, storage: 150, cloud: 50 },
+    { date: 'Nov 15', total: 1450, warehouse: 1200, storage: 180, cloud: 70 },
+    { date: 'Nov 16', total: 1100, warehouse: 900, storage: 150, cloud: 50 },
+    { date: 'Nov 17', total: 1600, warehouse: 1400, storage: 140, cloud: 60 },
+    { date: 'Nov 18', total: 1300, warehouse: 1100, storage: 150, cloud: 50 },
+    { date: 'Nov 19', total: 1800, warehouse: 1500, storage: 200, cloud: 100 },
+    { date: 'Nov 20', total: 1550, warehouse: 1300, storage: 180, cloud: 70 },
 ];
 
 export const accountSpend = {
@@ -318,13 +333,11 @@ ORDER BY active_users DESC;`
         const severity = severities[i % severities.length];
         const status = statuses[i % statuses.length];
         
-        // Strategy: Force associations with existing entities for smooth navigation
         let affectedResource = '';
         if (type === 'Application') {
             affectedResource = appNames[i % appNames.length];
         } else if (type === 'Query') {
             affectedResource = `q-${Math.floor(Math.random() * 9000000 + 1000000)}`;
-            // Mix in some application associations via the message
             const appAssoc = appNames[i % appNames.length];
             if (i % 2 === 0) affectedResource = `${appAssoc} - ${affectedResource}`;
         } else if (type === 'Warehouse') {

@@ -4,12 +4,12 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, A
 import { 
     usageCreditsData, 
     resourceSnapshotData, 
-    finopsRecommendations, 
+    recommendationsData, 
     connectionsData, 
     warehousesData, 
     spendTrendsData,
 } from '../data/dummyData';
-import { Account, User, BigScreenWidget, Page } from '../types';
+import { Account, User, BigScreenWidget, Page, Recommendation } from '../types';
 import { IconDotsVertical, IconChevronDown, IconAdd, IconList, IconInfo, IconSearch } from '../constants';
 import InfoTooltip from '../components/InfoTooltip';
 
@@ -87,12 +87,12 @@ const DATE_RANGES = [
     { label: 'Last 90 days', value: 90 },
 ];
 
-const RecommendationItem: React.FC<{ rec: typeof finopsRecommendations[0] }> = ({ rec }) => {
+const RecommendationItem: React.FC<{ rec: Recommendation }> = ({ rec }) => {
     const getTagStyles = (tag: string) => {
         switch(tag.toLowerCase()) {
-            case 'wh': return 'bg-violet-100 text-violet-600';
+            case 'warehouse': return 'bg-violet-100 text-violet-600';
             case 'query': return 'bg-cyan-100 text-cyan-600';
-            case 'storage': return 'bg-blue-100 text-blue-600';
+            case 'storage': return 'bg-blue-100 text-blue-800';
             default: return 'bg-gray-100 text-gray-600';
         }
     };
@@ -100,16 +100,46 @@ const RecommendationItem: React.FC<{ rec: typeof finopsRecommendations[0] }> = (
     return (
         <div className="p-4 rounded-xl bg-surface-nested border border-border-light/50 space-y-2">
             <div className="flex items-center gap-2">
-                <span className="text-[13px] font-bold text-text-strong font-mono">{rec.title}</span>
-                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${getTagStyles(rec.tag)}`}>{rec.tag}</span>
+                <span className="text-[13px] font-bold text-text-strong font-mono">{rec.insightType}</span>
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${getTagStyles(rec.resourceType)}`}>{rec.resourceType}</span>
             </div>
-            <p className="text-[13px] text-text-secondary leading-relaxed">{rec.description}</p>
+            <p className="text-[13px] text-text-secondary leading-relaxed">{rec.message}</p>
         </div>
     );
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        if (payload.length === 1 && payload[0].dataKey === 'total') {
+            const data = payload[0].payload;
+            const items = [
+                { name: 'Warehouse', value: data.warehouse, color: '#6932D5' },
+                { name: 'Storage', value: data.storage, color: '#A78BFA' },
+                { name: 'Cloud Service', value: data.cloud || 0, color: '#C4B5FD' }
+            ];
+
+            return (
+                <div className="bg-surface p-3 rounded-lg shadow-xl border border-border-color min-w-[180px]">
+                    <p className="text-xs font-bold text-text-strong mb-2 border-b border-border-light pb-1">{label}</p>
+                    <div className="space-y-1.5 mb-2">
+                        {items.map((entry, index) => (
+                            <div key={index} className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                                    <span className="text-[11px] font-medium text-text-secondary">{entry.name}:</span>
+                                </div>
+                                <span className="text-[11px] font-black text-text-strong">{entry.value.toLocaleString()} cr</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex items-center justify-between border-t border-border-light pt-2 mt-2">
+                        <span className="text-[11px] font-black text-text-muted uppercase tracking-tighter">Total Credits</span>
+                        <span className="text-sm font-black text-primary">{data.total.toLocaleString()} cr</span>
+                    </div>
+                </div>
+            );
+        }
+
         const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
         return (
             <div className="bg-surface p-3 rounded-lg shadow-xl border border-border-color min-w-[160px]">
@@ -164,7 +194,6 @@ const CreditsTrendWidget: React.FC = () => {
             title="Credits trend" 
             headerActions={
                 <div className="flex items-center gap-3">
-                    {/* Account Selector */}
                     <div className="relative" ref={accountRef}>
                         <button 
                             onClick={() => setIsAccountOpen(!isAccountOpen)}
@@ -188,7 +217,6 @@ const CreditsTrendWidget: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Time Range Selector */}
                     <div className="relative" ref={rangeRef}>
                         <button 
                             onClick={() => setIsRangeOpen(!isRangeOpen)}
@@ -249,10 +277,8 @@ const WavyGridBackground = () => (
     </div>
 );
 
-// Custom Y-Axis tick to allow navigation when clicking account names
 const CustomYAxisTick = (props: any) => {
     const { x, y, payload, onSelect } = props;
-    // Find the corresponding account object from connectionsData
     const account = connectionsData.find(acc => acc.name === payload.value);
 
     return (
@@ -275,8 +301,7 @@ const CustomYAxisTick = (props: any) => {
     );
 };
 
-const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAccountClick, onNavigate }) => {
-    // derive breakdowns for stacked bar
+const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onSelectUser, onAddAccountClick, onNavigate }) => {
     const topAccountsData = useMemo(() => connectionsData.map(acc => {
         const total = acc.tokens / 1000;
         return {
@@ -327,13 +352,11 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                 </div>
             </div>
 
-            {/* Single Column Widget Stack */}
             <div className="space-y-8">
-                {/* 1. Resource summary */}
                 <div className="bg-white rounded-[24px] border border-border-light shadow-sm p-6 flex flex-col gap-6">
                     <div className="flex justify-between items-center px-1">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-[14px] font-semibold text-text-primary tracking-tight">Resource summary</h2>
+                            <h2 className="text-14px font-semibold text-text-primary tracking-tight">Resource summary</h2>
                             <IconInfo className="w-4 h-4 text-[#9A9AB2]" />
                         </div>
                         <button className="p-1 rounded-full hover:bg-surface-nested transition-colors text-[#9A9AB2]">
@@ -357,14 +380,26 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                         <SummaryMetricCard 
                             label="Storage" 
                             value="36 TB" 
-                            subValue="1.5K Credits" 
+                            subValue="2.1K Credits" 
                             onClick={() => onNavigate('Resource summary', undefined, { tab: 'Storage' })} 
                         />
                         <SummaryMetricCard 
                             label="Applications" 
-                            value="4" 
-                            subValue="3.5K Credits" 
+                            value="5" 
+                            subValue="50.5K Credits" 
                             onClick={() => onNavigate('Resource summary', undefined, { tab: 'Applications' })} 
+                        />
+                        <SummaryMetricCard 
+                            label="Workloads" 
+                            value="52" 
+                            subValue="168K Credits" 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Workloads' })} 
+                        />
+                        <SummaryMetricCard 
+                            label="Services" 
+                            value="7" 
+                            subValue="6.8K Credits" 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Services' })} 
                         />
                         <SummaryMetricCard 
                             label="Cortex" 
@@ -385,17 +420,15 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                     </div>
                 </div>
 
-                {/* 2. Recommendations */}
                 <WidgetCard 
                     title="Recommendations" 
                     headerActions={<button onClick={() => onNavigate('Recommendations')} className="text-[11px] font-bold text-link hover:underline">View all</button>}
                 >
                     <div className="space-y-4">
-                        {finopsRecommendations.map(rec => <RecommendationItem key={rec.id} rec={rec} />)}
+                        {recommendationsData.slice(0, 3).map(rec => <RecommendationItem key={rec.id} rec={rec} />)}
                     </div>
                 </WidgetCard>
 
-                {/* 3. Top accounts by credits */}
                 <WidgetCard 
                     title="Top accounts by credits" 
                     headerActions={<button onClick={() => onNavigate('Resource summary', undefined, { tab: 'Accounts' })} className="text-[11px] font-bold text-link hover:underline">View all</button>}
@@ -428,7 +461,6 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                     </div>
                 </WidgetCard>
 
-                {/* 4. Credits trend */}
                 <CreditsTrendWidget />
             </div>
         </div>

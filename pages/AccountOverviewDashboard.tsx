@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Account, TopQuery, Warehouse } from '../types';
 import { accountSpend, topQueriesData, accountCostBreakdown, warehousesData, queryListData, spendTrendsData } from '../data/dummyData';
@@ -69,11 +70,26 @@ const SpendTrendsCustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
         return (
-            <div className="bg-surface p-2 rounded-lg shadow-lg border border-border-color">
-                <p className="text-sm font-semibold text-text-strong mb-1">{label}</p>
-                <p className="text-xs text-text-secondary">Total: <span className="font-medium text-text-primary">{data.total.toLocaleString()} credits</span></p>
-                <p className="text-xs text-text-secondary">Warehouse: <span className="font-medium text-text-primary">{data.warehouse.toLocaleString()} credits</span></p>
-                <p className="text-xs text-text-secondary">Storage: <span className="font-medium text-text-primary">{data.storage.toLocaleString()} credits</span></p>
+            <div className="bg-surface p-3 rounded-lg shadow-xl border border-border-color min-w-[180px]">
+                <p className="text-sm font-semibold text-text-strong mb-2 border-b border-border-light pb-1">{label}</p>
+                <div className="space-y-1.5 mb-2">
+                    <div className="flex justify-between items-center gap-4">
+                        <span className="text-xs text-text-secondary">Warehouse:</span>
+                        <span className="text-xs font-bold text-text-primary">{data.warehouse.toLocaleString()} cr</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-4">
+                        <span className="text-xs text-text-secondary">Storage:</span>
+                        <span className="text-xs font-bold text-text-primary">{data.storage.toLocaleString()} cr</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-4">
+                        <span className="text-xs text-text-secondary">Cloud Service:</span>
+                        <span className="text-xs font-bold text-text-primary">{(data.cloud || 0).toLocaleString()} cr</span>
+                    </div>
+                </div>
+                <div className="flex justify-between items-center border-t border-border-light pt-2 mt-2">
+                    <span className="text-xs font-black text-text-muted uppercase tracking-tighter">Total Credits</span>
+                    <span className="text-sm font-black text-primary">{data.total.toLocaleString()} cr</span>
+                </div>
             </div>
         );
     }
@@ -137,13 +153,11 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
             case 'spend-breakdown':
                 fileName = 'spend_breakdown';
                 headers = ["Entity", "Cost", "Credits", "Percentage", "Timestamp"];
-                /* Fixed: Changed item.credits to item.tokens as per AccountCostBreakdown item definition */
                 dataRows = accountCostBreakdown.map(item => [item.name, item.cost, item.tokens, item.percentage, timestamp]);
                 break;
             case 'top-warehouses':
                 fileName = 'top_warehouses';
                 headers = ["Warehouse Name", "Cost", "Credits", "Timestamp"];
-                /* Fixed: Changed item.credits to item.tokens as per Warehouse definition */
                 dataRows = warehousesData.map(item => [item.name, item.cost, item.tokens, timestamp]);
                 break;
             case 'spend-trends':
@@ -167,7 +181,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
     };
 
     const handleOpenSpendBreakdownTable = () => {
-        /* Fixed: Changed credits to tokens in accountCostBreakdown reduction and mapping */
         const totalCredits = accountCostBreakdown.reduce((sum, item) => sum + item.tokens, 0);
         const data = accountCostBreakdown.map(item => ({
             name: item.name,
@@ -219,7 +232,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
     };
 
     const SpendForecastCard: React.FC = () => {
-        /* Fixed: Changed credits to tokens as per accountSpend definition */
         const monthlySpend = accountSpend.tokens.monthly;
         const forecastedSpend = accountSpend.tokens.forecasted;
         return (
@@ -253,7 +265,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
     };
 
     const SpendBreakdownCard: React.FC = () => {
-         /* Fixed: Changed credits to tokens as per accountSpend definition */
          const monthlySpend = accountSpend.tokens.monthly;
         return (
             <Card>
@@ -279,7 +290,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
                 <div className="space-y-4">
                     {accountCostBreakdown.map(item => {
                         const chartData = [{ value: item.percentage }, { value: 100 - item.percentage }];
-                        /* Fixed: Changed item.credits to item.tokens as per accountCostBreakdown item definition */
                         const value = item.tokens;
 
                         return (
@@ -336,7 +346,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
     };
     
     const TopQueriesCard: React.FC = () => {
-        /* Fixed: Changed 'credits' to 'tokens' as per TopQuery definition */
         const topQueries = [...topQueriesData].sort((a,b) => b.tokens - a.tokens).slice(0, 10);
         return (
             <Card>
@@ -350,7 +359,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
                             <XAxis type="number" stroke="#5A5A72" fontSize={12} tickLine={false} axisLine={{ stroke: '#E5E5E0' }} label={{ value: 'Credits', position: 'insideBottom', dy: 15, style: { fill: '#5A5A72' } }} />
                             <YAxis type="category" dataKey="queryText" stroke="#5A5A72" tickLine={false} axisLine={false} interval={0} width={150} tick={{ fill: '#5A5A72', fontSize: 12, width: 140 }} tickFormatter={(value) => value.length > 20 ? `${value.substring(0, 20)}...` : value} />
                             <Tooltip cursor={{ fill: 'rgba(105, 50, 213, 0.1)' }} content={<CustomTooltip />} />
-                            {/* Fixed: Changed dataKey to 'tokens' as per TopQuery definition */}
                             <Bar dataKey="tokens" fill="#6932D5" barSize={12} shape={<AccessibleBar onBarClick={() => {}} ariaLabelGenerator={(p: any) => `Query: ${p.queryText}`} />} />
                         </BarChart>
                     </ResponsiveContainer>
@@ -360,7 +368,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
     };
 
     const TopWarehousesCard: React.FC = () => {
-        /* Fixed: Changed 'credits' to 'tokens' as per Warehouse definition */
         const topWarehouses = [...warehousesData].sort((a, b) => b.tokens - a.tokens).slice(0, 10);
         return (
             <Card>
@@ -394,7 +401,6 @@ const AccountOverviewDashboard: React.FC<AccountOverviewDashboardProps> = ({ acc
                             <XAxis type="number" stroke="#5A5A72" fontSize={12} tickLine={false} axisLine={{ stroke: '#E5E5E0' }} label={{ value: 'Credits', position: 'insideBottom', dy: 15, style: { fill: '#5A5A72' } }} />
                             <YAxis type="category" dataKey="name" stroke="#5A5A72" tickLine={false} axisLine={false} interval={0} width={150} tick={{ fill: '#5A5A72', fontSize: 12, width: 140 }} tickFormatter={(value) => value.length > 20 ? `${value.substring(0, 20)}...` : value} />
                             <Tooltip cursor={{ fill: 'rgba(105, 50, 213, 0.1)' }} content={<CustomTooltip />} />
-                            {/* Fixed: Changed dataKey to 'tokens' as per Warehouse definition */}
                             <Bar dataKey="tokens" fill="#6932D5" barSize={12} shape={<AccessibleBar onBarClick={() => {}} ariaLabelGenerator={(p: any) => `Warehouse: ${p.name}`} />} />
                         </BarChart>
                     </ResponsiveContainer>
