@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, PieChart, Pie } from 'recharts';
 import { storageSummaryData, storageGrowthData, databasesData, storageByTypeData } from '../data/dummyData';
@@ -145,10 +146,6 @@ const StorageSummaryView: React.FC<{ onSelectDatabase: (databaseId: string) => v
 
     return (
         <div className="space-y-4">
-            <div>
-                <h1 className="text-2xl font-bold text-text-primary">Storage Summary</h1>
-                <p className="mt-1 text-text-secondary">An overview of storage usage, costs, and trends for this account.</p>
-            </div>
             <div className="columns-1 lg:columns-2 gap-4">
                 {/* Widget 1: Total Storage & Spend */}
                 <WidgetCard>

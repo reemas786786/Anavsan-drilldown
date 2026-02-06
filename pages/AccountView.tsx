@@ -266,6 +266,70 @@ const CortexListView: React.FC<{
     );
 };
 
+const StorageTabbedView: React.FC<{ 
+    onSetBigScreenWidget: (widget: BigScreenWidget) => void;
+    selectedDatabaseId: string | null;
+    setSelectedDatabaseId: (id: string | null) => void;
+}> = ({ onSetBigScreenWidget, selectedDatabaseId, setSelectedDatabaseId }) => {
+    const [activeTab, setActiveTab] = useState<'Storage overview' | 'Databases'>('Storage overview');
+
+    // If a database is selected, we force rendering of the detail view regardless of tab
+    if (selectedDatabaseId) {
+        return (
+            <div className="px-6 pt-4 pb-12">
+                <DatabasesView 
+                    selectedDatabaseId={selectedDatabaseId} 
+                    onSelectDatabase={setSelectedDatabaseId} 
+                    onBackToList={() => setSelectedDatabaseId(null)} 
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col h-full bg-background">
+            <header className="px-6 pt-4 pb-0 flex flex-col gap-6 flex-shrink-0 bg-background border-b border-border-light mb-6">
+                <div>
+                    <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Storage</h1>
+                    <p className="text-sm text-text-secondary font-medium mt-1">Explore and manage storage costs, table health, and database efficiency.</p>
+                </div>
+                <div className="flex gap-8">
+                    {(['Storage overview', 'Databases'] as const).map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${
+                                activeTab === tab 
+                                ? 'text-primary' 
+                                : 'text-text-muted hover:text-text-secondary'
+                            }`}
+                        >
+                            {tab}
+                            {activeTab === tab && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full animate-in fade-in slide-in-from-bottom-1 duration-300" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </header>
+            <main className="flex-1 px-6 pb-12 overflow-y-auto no-scrollbar">
+                {activeTab === 'Storage overview' ? (
+                    <StorageSummaryView 
+                        onSelectDatabase={(id) => { setActiveTab('Databases'); setSelectedDatabaseId(id === '__view_all__' ? null : id); }} 
+                        onSetBigScreenWidget={onSetBigScreenWidget} 
+                    />
+                ) : (
+                    <DatabasesView 
+                        selectedDatabaseId={null} 
+                        onSelectDatabase={setSelectedDatabaseId} 
+                        onBackToList={() => setSelectedDatabaseId(null)} 
+                    />
+                )}
+            </main>
+        </div>
+    );
+};
+
 const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAccount, onBackToAccounts, backLabel, sqlFiles, onSaveQueryClick, onSetBigScreenWidget, activePage, onPageChange, onShareQueryClick, onPreviewQuery, selectedQuery, setSelectedQuery, analyzingQuery, onAnalyzeQuery, onOptimizeQuery, onSimulateQuery, pullRequests, selectedPullRequest, setSelectedPullRequest, users, navigationSource, selectedWarehouse, setSelectedWarehouse, warehouses, assignment, currentUser, onUpdateAssignmentStatus, onAssignToEngineer, onResolveAssignment, selectedApplicationId, setSelectedApplicationId, breadcrumbItems, onNavigateToRecommendations }) => {
     const [selectedDatabaseId, setSelectedDatabaseId] = useState<string | null>(null);
     
@@ -291,19 +355,6 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
         severityFilter: ['Medium', 'High'],
     });
 
-    const handleSelectDatabaseFromSummary = (databaseId: string) => {
-        onPageChange('Databases');
-        if (databaseId === '__view_all__') {
-            setSelectedDatabaseId(null);
-        } else {
-            setSelectedDatabaseId(databaseId);
-        }
-    };
-
-    const handleBackToDbList = () => {
-        setSelectedDatabaseId(null);
-    };
-
     const handleBackFromTool = () => {
         onPageChange(navigationSource || 'All queries');
         onAnalyzeQuery(null, ''); // This clears the analyzingQuery state and source
@@ -317,10 +368,11 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
         setSelectedWarehouse(null);
         setSelectedQuery(null);
         setSelectedPullRequest(null);
+        setSelectedDatabaseId(null);
         onPageChange(newPage);
     };
 
-    const isDatabaseDetailView = activePage === 'Databases' && !!selectedDatabaseId;
+    const isDatabaseDetailView = !!selectedDatabaseId;
     
     const renderContent = () => {
         if (selectedWarehouse) {
@@ -410,17 +462,14 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
                     onBack={handleBackFromTool} 
                     onSaveClick={onSaveQueryClick} 
                 />;
-            case 'Storage summary':
-                return <StorageSummaryView 
-                    onSelectDatabase={handleSelectDatabaseFromSummary} 
-                    onSetBigScreenWidget={onSetBigScreenWidget} 
-                />;
-            case 'Databases':
-                return <DatabasesView 
-                    selectedDatabaseId={selectedDatabaseId} 
-                    onSelectDatabase={setSelectedDatabaseId} 
-                    onBackToList={handleBackToDbList} 
-                />;
+            case 'Storage':
+                return (
+                    <StorageTabbedView 
+                        onSetBigScreenWidget={onSetBigScreenWidget} 
+                        selectedDatabaseId={selectedDatabaseId}
+                        setSelectedDatabaseId={setSelectedDatabaseId}
+                    />
+                );
             case 'Cortex':
                 return <CortexListView onNavigateToRecommendations={onNavigateToRecommendations} />;
             default:
@@ -429,7 +478,7 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
     };
 
     const isDeepDrillDown = !!selectedWarehouse || !!selectedQuery || !!selectedPullRequest || isDatabaseDetailView;
-    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'Warehouses', 'Applications', 'Cortex'].includes(activePage);
+    const isListView = ['All queries', 'Slow queries', 'Similar query patterns', 'Query analyzer', 'Query optimizer', 'Query simulator', 'Warehouses', 'Applications', 'Cortex', 'Storage'].includes(activePage);
 
     return (
         <div className="flex h-full overflow-hidden">
@@ -450,7 +499,7 @@ const AccountView: React.FC<AccountViewProps> = ({ account, accounts, onSwitchAc
                     </div>
                 </div>
                 
-                <div className={`flex-1 overflow-auto bg-background ${isDeepDrillDown ? '' : (isListView && !selectedWarehouse ? "" : "px-6 pt-4 pb-12")}`}>
+                <div className={`flex-1 overflow-auto bg-background ${isDeepDrillDown ? '' : (isListView && !selectedWarehouse && activePage !== 'Storage' ? "" : (activePage === 'Storage' ? "" : "px-6 pt-4 pb-12"))}`}>
                     <div className="lg:hidden p-4 pb-0">
                          <MobileNav activePage={activePage} onPageChange={handleSidebarPageChange} accountNavItems={accountNavItems} />
                     </div>

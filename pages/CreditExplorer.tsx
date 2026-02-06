@@ -78,14 +78,13 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
     const handleAccountClickByName = (accountName: string) => {
         const account = connectionsData.find(acc => acc.name === accountName);
         if (account && onSelectAccount) {
-            // Determine target subpage based on category
             const subPageMap: Record<ResourceCategory, string> = {
                 'Accounts': 'Account overview',
                 'Compute': 'Warehouses',
-                'Storage': 'Storage summary',
+                'Storage': 'Storage',
                 'Workloads': 'Warehouses',
                 'Services': 'Account overview',
-                'Cortex': 'Cortex list',
+                'Cortex': 'Cortex',
                 'User': 'Account overview',
                 'Queries': 'All queries'
             };
@@ -139,7 +138,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         accountIdentifier: connectionsData.find(c => c.name === svc.account)?.identifier || 'acme.snowflakecomputing.com',
                         totalRaw: svc.credits,
                         creditsFormatted: svc.credits.toLocaleString(),
-                        queriesFormatted: svc.queryCount.toLocaleString(),
+                        queries: svc.queryCount.toLocaleString(), 
                         insights: getInsightCount(svc.account, 'Services', svc.type)
                     }));
                 case 'Accounts':
@@ -198,16 +197,39 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         };
                     });
                 case 'Cortex':
-                    return cortexModelsData.map(model => ({
-                        id: model.id,
-                        accountName: 'Finance Prod',
-                        accountIdentifier: 'acme.us-east-1',
-                        modelName: model.name,
-                        tokens: model.tokens,
-                        creditsRaw: model.credits * 1000,
-                        credits: formatK(model.credits * 1000),
-                        insights: model.insightCount || 2
-                    }));
+                    // Grouping Cortex model data by account to show count and aggregated tokens/credits
+                    return [
+                        {
+                            id: 'c-1',
+                            accountName: 'Finance Prod',
+                            accountIdentifier: 'acme.us-east-1',
+                            count: cortexModelsData.length.toString(),
+                            tokens: '12.4M',
+                            creditsRaw: 1500,
+                            credits: '1.5K',
+                            insights: getInsightCount('Finance Prod', 'Cortex')
+                        },
+                        {
+                            id: 'c-2',
+                            accountName: 'Account B',
+                            accountIdentifier: 'acme.us-east-2',
+                            count: '4',
+                            tokens: '8.2M',
+                            creditsRaw: 900,
+                            credits: '0.9K',
+                            insights: getInsightCount('Account B', 'Cortex')
+                        },
+                        {
+                            id: 'c-3',
+                            accountName: 'Account E',
+                            accountIdentifier: 'acme.us-west-2',
+                            count: '2',
+                            tokens: '4.1M',
+                            creditsRaw: 450,
+                            credits: '0.4K',
+                            insights: getInsightCount('Account E', 'Cortex')
+                        }
+                    ];
                 case 'User':
                     return connectionsData.map(acc => ({
                         id: acc.id,
@@ -215,6 +237,8 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                         accountIdentifier: acc.identifier,
                         userCountRaw: acc.usersCount,
                         userCount: acc.usersCount.toString(),
+                        queriesRaw: parseInt(acc.queriesCount.replace('K', '')) * 1000,
+                        queries: acc.queriesCount,
                         insights: getInsightCount(acc.name, 'User')
                     }));
                 case 'Queries':
@@ -256,11 +280,11 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                 case 'Accounts': return ['Account name', 'Total credits', 'Compute credits', 'Storage credits', 'Service credits', 'Workloads', 'Users', 'Queries', 'Insights'];
                 case 'Compute': return ['Account name', 'Compute credits', 'Warehouses', 'Queries', 'Insights'];
                 case 'Storage': return ['Account name', 'Storage credits', 'Storage size', 'Unused table size', 'Insights'];
-                case 'Cortex': return ['Account name', 'Model name', 'Tokens', 'Credits', 'Insights'];
-                case 'User': return ['Account name', 'User count', 'Insights'];
+                case 'Cortex': return ['Account name', 'Model count', 'Tokens', 'Credits', 'Insights'];
+                case 'User': return ['Account name', 'User count', 'Queries', 'Insights'];
                 case 'Queries': return ['Account name', 'Queries count', 'Total credits', 'Insights'];
                 case 'Workloads': return ['Account name', 'Workloads', 'Workload credits', 'Insights'];
-                case 'Services': return ['Account name', 'Service credits', 'Services used', 'Queries', 'Trend %', 'Insights'];
+                case 'Services': return ['Account name', 'Service credits', 'Services used', 'Insights'];
                 default: return ['Account name', 'Total credits', 'Insights'];
             }
         })();
@@ -394,21 +418,23 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                 {tableData.headers.map((h) => (
                                     <th 
                                         key={h} 
-                                        onClick={() => requestSort(h)}
-                                        className={`px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light cursor-pointer select-none hover:text-primary transition-colors group ${getColumnWidth(h)} ${h === 'Insights' ? 'text-right' : ''}`}
+                                        onClick={() => h !== 'Insights' ? requestSort(h) : undefined}
+                                        className={`px-6 py-4 text-[11px] font-bold text-text-muted border-b border-border-light ${h !== 'Insights' ? 'cursor-pointer' : ''} select-none hover:text-primary transition-colors group ${getColumnWidth(h)} ${h === 'Insights' ? 'text-right' : ''}`}
                                     >
                                         <div className={`flex items-center gap-1 ${h === 'Insights' ? 'justify-end' : ''}`}>
                                             <span className="whitespace-nowrap">{h}</span>
                                             {h === 'Unused table size' && (
                                                 <InfoTooltip text="Total size of tables that have not been queried or modified in the last 90 days." position="bottom" />
                                             )}
-                                            <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity ml-1">
-                                                {sortConfig?.key === h ? (
-                                                    sortConfig.direction === 'asc' ? <IconArrowUp className="w-2.5 h-2.5" /> : <IconArrowDown className="w-2.5 h-2.5" />
-                                                ) : (
-                                                    <IconChevronDown className="w-2.5 h-2.5 opacity-30" />
-                                                )}
-                                            </div>
+                                            {h !== 'Insights' && (
+                                                <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                                                    {sortConfig?.key === h ? (
+                                                        sortConfig.direction === 'asc' ? <IconArrowUp className="w-2.5 h-2.5" /> : <IconArrowDown className="w-2.5 h-2.5" />
+                                                    ) : (
+                                                        <IconChevronDown className="w-2.5 h-2.5 opacity-30" />
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </th>
                                 ))}
@@ -419,7 +445,6 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                 <tr key={row.id} className="hover:bg-surface-nested transition-colors group">
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col">
-                                            {/* Primary Account Name Column - Always Clickable */}
                                             <button 
                                                 onClick={() => handleAccountClickByName(row.accountName)}
                                                 className="text-sm font-bold text-link hover:underline text-left"
@@ -452,14 +477,13 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                             if (h === 'Total credits') return 'total';
                                             if (h === 'Compute credits') return 'compute';
                                             if (h === 'Storage credits') return 'total';
-                                            if (h === 'Service credits') return 'service';
+                                            if (h === 'Service credits') return 'creditsFormatted';
                                             if (h === 'Workloads') return 'workloads';
                                             if (h === 'Warehouses') return 'workloads';
                                             if (h === 'Users') return 'users';
                                             if (h === 'Queries') return 'queries';
                                             
                                             if (h === 'Workload credits') return 'creditsFormatted';
-                                            if (h === 'Service credits') return 'creditsFormatted';
                                             if (h === 'Credits') return 'credits';
                                             if (h === 'Trend %') return 'trend';
                                             if (h === 'Volume') return 'volume';
@@ -470,6 +494,7 @@ const ResourceSummary: React.FC<ResourceSummaryProps> = ({ initialTab, onNavigat
                                             if (h === 'Services used') return 'count';
                                             if (h === 'Top service') return 'type';
                                             if (h === 'Model name') return 'modelName';
+                                            if (h === 'Model count') return 'count';
                                             if (h === 'User count') return 'userCount';
                                             if (h === 'Storage size') return 'size';
                                             if (h === 'Unused table size') return 'unused';
