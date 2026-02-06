@@ -35,7 +35,7 @@ const WidgetCard: React.FC<{
     <div className="bg-surface p-6 rounded-[24px] shadow-sm flex flex-col border border-border-light">
         <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-1.5">
-                <h4 className="text-[14px] font-bold text-text-strong tracking-tight uppercase tracking-[0.05em]">{title}</h4>
+                <h4 className="text-[14px] font-bold text-text-strong tracking-tight">{title}</h4>
                 {infoText && <InfoTooltip text={infoText} />}
             </div>
             <div className="flex items-center gap-2">
@@ -72,10 +72,10 @@ const SummaryMetricCard: React.FC<{
         onClick={onClick}
         className="bg-surface-nested p-4 rounded-[16px] border border-border-light flex flex-col h-[90px] text-left hover:border-primary/40 hover:bg-surface-hover transition-all group shadow-sm w-full"
     >
-        <p className="text-[10px] font-bold text-[#9A9AB2] uppercase tracking-widest group-hover:text-primary transition-colors">{label}</p>
+        <p className="text-[10px] font-bold text-[#9A9AB2] group-hover:text-primary transition-colors">{label}</p>
         <div className="mt-auto">
             <p className="text-[18px] font-black text-[#161616] tracking-tight leading-none">{value}</p>
-            {subValue && <p className="text-[10px] font-bold text-[#5A5A72] mt-1 uppercase tracking-tight">{subValue}</p>}
+            {subValue && <p className="text-[10px] font-bold text-[#5A5A72] mt-1 tracking-tight">{subValue}</p>}
         </div>
     </button>
 );
@@ -90,9 +90,9 @@ const DATE_RANGES = [
 const RecommendationItem: React.FC<{ rec: typeof finopsRecommendations[0] }> = ({ rec }) => {
     const getTagStyles = (tag: string) => {
         switch(tag.toLowerCase()) {
-            case 'join': return 'bg-violet-100 text-violet-600';
-            case 'table scan': return 'bg-cyan-100 text-cyan-600';
-            case 'aggregation': return 'bg-blue-100 text-blue-600';
+            case 'wh': return 'bg-violet-100 text-violet-600';
+            case 'query': return 'bg-cyan-100 text-cyan-600';
+            case 'storage': return 'bg-blue-100 text-blue-600';
             default: return 'bg-gray-100 text-gray-600';
         }
     };
@@ -126,7 +126,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                     ))}
                 </div>
                 <div className="flex items-center justify-between border-t border-border-light pt-1.5 mt-1.5">
-                    <span className="text-[10px] font-black text-text-muted uppercase">Total Credits</span>
+                    <span className="text-[10px] font-black text-text-muted uppercase tracking-tighter">Total Credits</span>
                     <span className="text-xs font-black text-primary">{total.toLocaleString()} cr</span>
                 </div>
             </div>
@@ -161,7 +161,7 @@ const CreditsTrendWidget: React.FC = () => {
 
     return (
         <WidgetCard 
-            title="Credits Trend" 
+            title="Credits trend" 
             headerActions={
                 <div className="flex items-center gap-3">
                     {/* Account Selector */}
@@ -322,18 +322,18 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
         <div className="space-y-8 px-6 pb-20 pt-4 max-w-[1440px] mx-auto">
             <div className="flex justify-between items-end mb-4">
                 <div>
-                    <h1 className="text-[28px] font-bold text-text-strong tracking-tight">Data cloud overview</h1>
+                    <h1 className="text-[28px] font-bold text-text-strong tracking-tight">AI data cloud overview</h1>
                     <p className="text-sm text-text-secondary font-medium mt-1">Snapshot of your organization's Snowflake consumption.</p>
                 </div>
             </div>
 
             {/* Single Column Widget Stack */}
             <div className="space-y-8">
-                {/* 1. Resource Summary */}
+                {/* 1. Resource summary */}
                 <div className="bg-white rounded-[24px] border border-border-light shadow-sm p-6 flex flex-col gap-6">
                     <div className="flex justify-between items-center px-1">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-[14px] font-semibold text-text-primary tracking-tight uppercase tracking-[0.05em]">Resource summary</h2>
+                            <h2 className="text-[14px] font-semibold text-text-primary tracking-tight">Resource summary</h2>
                             <IconInfo className="w-4 h-4 text-[#9A9AB2]" />
                         </div>
                         <button className="p-1 rounded-full hover:bg-surface-nested transition-colors text-[#9A9AB2]">
@@ -346,41 +346,41 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                             label="Accounts" 
                             value="8" 
                             subValue="48.5K Credits" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Accounts' })} 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Accounts' })} 
                         />
                         <SummaryMetricCard 
                             label="Compute" 
                             value="44.25K" 
                             subValue="Credits"
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Compute' })} 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Compute' })} 
                         />
                         <SummaryMetricCard 
                             label="Storage" 
                             value="36 TB" 
                             subValue="1.5K Credits" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Storage' })} 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Storage' })} 
                         />
                         <SummaryMetricCard 
                             label="Applications" 
                             value="4" 
                             subValue="3.5K Credits" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Applications' })} 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Applications' })} 
                         />
                         <SummaryMetricCard 
                             label="Cortex" 
                             value="1.5K" 
                             subValue="Credits" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Cortex' })} 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Cortex' })} 
                         />
                         <SummaryMetricCard 
                             label="Users" 
                             value="43" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'User' })} 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'User' })} 
                         />
                         <SummaryMetricCard 
                             label="Queries" 
                             value="950" 
-                            onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Queries' })} 
+                            onClick={() => onNavigate('Resource summary', undefined, { tab: 'Queries' })} 
                         />
                     </div>
                 </div>
@@ -398,7 +398,7 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                 {/* 3. Top accounts by credits */}
                 <WidgetCard 
                     title="Top accounts by credits" 
-                    headerActions={<button onClick={() => onNavigate('Resource Summary', undefined, { tab: 'Accounts' })} className="text-[11px] font-bold text-link hover:underline">View all</button>}
+                    headerActions={<button onClick={() => onNavigate('Resource summary', undefined, { tab: 'Accounts' })} className="text-[11px] font-bold text-link hover:underline">View all</button>}
                 >
                     <div className="h-[350px] flex flex-col">
                         <ResponsiveContainer width="100%" height="100%">
@@ -418,7 +418,7 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                                     verticalAlign="bottom" 
                                     align="center" 
                                     iconType="circle"
-                                    wrapperStyle={{ paddingTop: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                                    wrapperStyle={{ paddingTop: '20px', fontSize: '10px', fontWeight: 'bold' }}
                                 />
                                 <Bar dataKey="warehouse" name="Warehouse" stackId="a" fill="#6932D5" barSize={16} />
                                 <Bar dataKey="storage" name="Storage" stackId="a" fill="#A78BFA" barSize={16} />
@@ -428,7 +428,7 @@ const Overview: React.FC<OverviewProps> = ({ accounts, onSelectAccount, onAddAcc
                     </div>
                 </WidgetCard>
 
-                {/* 4. Credits Trend */}
+                {/* 4. Credits trend */}
                 <CreditsTrendWidget />
             </div>
         </div>

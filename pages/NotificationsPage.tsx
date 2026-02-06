@@ -296,12 +296,13 @@ const AlertsView: React.FC<AlertsViewProps> = (props) => {
                     <p className="text-sm text-text-secondary font-medium mt-1">Review and take action on AI-generated insights and performance alerts.</p>
                 </div>
             </div>
-            <div className="bg-surface rounded-xl flex flex-col min-h-0">
-                <div className="p-4 flex-shrink-0 flex items-center gap-x-4 border-b border-border-color">
+            <div className="bg-white rounded-xl flex flex-col min-h-0 border border-border-light shadow-sm">
+                {/* Filter Bar: Added relative z-20 and ensure overflow-visible for dropdowns */}
+                <div className="p-4 flex-shrink-0 flex flex-wrap items-center gap-4 border-b border-border-color relative z-20 overflow-visible">
                     <DateRangeDropdown selectedValue={dateFilter} onChange={setDateFilter} />
                     <MultiSelectDropdown label="Insight Type" options={filterOptions.types} selectedOptions={typeFilter} onChange={setTypeFilter} selectionMode="single" />
                     <MultiSelectDropdown label="Status" options={['Unread', 'Read']} selectedOptions={readStatusFilter} onChange={setReadStatusFilter} selectionMode="single" />
-                    <div className="relative ml-auto" style={{width: '350px'}}>
+                    <div className="relative flex-grow ml-auto" style={{maxWidth: '350px'}}>
                         <IconSearch className="h-5 w-5 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                         <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search messages or warehouse/query..." className="w-full pl-10 pr-4 py-2 bg-background border-transparent rounded-full text-sm focus:ring-1 focus:ring-primary" />
                     </div>
@@ -309,7 +310,7 @@ const AlertsView: React.FC<AlertsViewProps> = (props) => {
                         Mark all as read
                     </button>
                 </div>
-                <div className="overflow-y-auto flex-grow min-h-0">
+                <div className="overflow-y-auto flex-grow min-h-0 no-scrollbar">
                     <table className="w-full text-sm">
                         <thead className="text-sm text-text-primary sticky top-0 z-10 bg-table-header-bg">
                             <tr>
@@ -464,25 +465,25 @@ export const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ activityLogs
     };
 
     return (
-        <div className="space-y-4 p-4">
+        <div className="space-y-4">
             <div className="mb-8">
                 <h1 className="text-[28px] font-bold text-text-strong tracking-tight">User Activity</h1>
                 <p className="text-sm text-text-secondary font-medium mt-1">Track user and system actions across your Anavsan workspace.</p>
             </div>
-            <div className="bg-surface rounded-xl flex flex-col min-h-0">
-                <div className="p-2 flex-shrink-0 flex items-center gap-x-2 border-b border-border-color">
+            <div className="bg-surface rounded-xl flex flex-col min-h-0 border border-border-light shadow-sm">
+                <div className="p-2 flex-shrink-0 flex flex-wrap items-center gap-x-2 border-b border-border-color relative z-20 overflow-visible">
                     <DateRangeDropdown selectedValue={dateFilter} onChange={setDateFilter} />
-                    <div className="h-4 w-px bg-border-color"></div>
+                    <div className="h-4 w-px bg-border-color hidden sm:block"></div>
                     <MultiSelectDropdown label="User" options={filterOptions.userNames} selectedOptions={userFilter} onChange={setUserFilter} selectionMode="single" />
                     <MultiSelectDropdown label="Action" options={filterOptions.actionTypes} selectedOptions={actionFilter} onChange={setActionFilter} selectionMode="single" />
                     <MultiSelectDropdown label="Module" options={filterOptions.modules} selectedOptions={moduleFilter} onChange={setModuleFilter} selectionMode="single" />
                     <MultiSelectDropdown label="Status" options={filterOptions.statuses} selectedOptions={statusFilter} onChange={setStatusFilter} selectionMode="single" />
-                    <div className="relative flex-grow ml-auto">
+                    <div className="relative flex-grow ml-auto" style={{maxWidth: '300px'}}>
                         <IconSearch className="h-5 w-5 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                         <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search activities..." className="w-full pl-10 pr-4 py-2 bg-background border-transparent rounded-full text-sm focus:ring-1 focus:ring-primary" />
                     </div>
                 </div>
-                <div className="overflow-y-auto flex-grow min-h-0">
+                <div className="overflow-y-auto flex-grow min-h-0 no-scrollbar">
                     <table className="w-full text-sm">
                         <thead className="text-sm text-text-primary sticky top-0 z-10 bg-table-header-bg">
                             <tr>

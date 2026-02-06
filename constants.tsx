@@ -375,21 +375,21 @@ const IconApplication: React.FC<{ className?: string }> = ({ className }) => (
 
 // --- Navigation Data ---
 export const NAV_ITEMS_TOP: NavItem[] = [
-    { name: 'Data Cloud Overview', icon: IconOverview },
+    { name: 'AI data cloud overview', icon: IconOverview },
     { name: 'Dashboards', icon: IconDashboard },
-    { name: 'Resource Summary', icon: IconCurrencyDollar },
+    { name: 'Resource summary', icon: IconCurrencyDollar },
     { name: 'Recommendations', icon: IconLightbulb },
     { name: 'Accounts', icon: IconConnections },
     { 
-        name: 'Query Workspace', 
+        name: 'Query workspace', 
         icon: IconCode,
         subItems: [
-            { name: 'Assigned Queries' },
-            { name: 'Query Vault' }
+            { name: 'Assigned queries' },
+            { name: 'Query vault' }
         ]
     },
     { name: 'Reports', icon: IconReports },
-    { name: 'AI Agent', icon: IconAIAgent },
+    { name: 'AI agent', icon: IconAIAgent },
 ];
 
 export const NAV_ITEMS_BOTTOM: NavItem[] = [
@@ -397,17 +397,17 @@ export const NAV_ITEMS_BOTTOM: NavItem[] = [
         name: 'Billing', 
         icon: IconCreditCard,
         subItems: [
-            { name: 'Plans' },
-            { name: 'Billing History' },
-            { name: 'Team Consumption' }
+            { name: 'Your plan' },
+            { name: 'Billing history' },
+            { name: 'Team consumption' }
         ]
     },
     {
-        name: 'Activity Logs',
+        name: 'Activity logs',
         icon: IconFileText,
         subItems: [
-            { name: 'Query Logs' },
-            { name: 'System Logs' }
+            { name: 'Query logs' },
+            { name: 'System logs' }
         ]
     },
     { name: 'Integrations', icon: IconShare },
@@ -439,11 +439,11 @@ export const accountNavItems = [
         icon: IconLayers, 
         children: [
             { name: 'Overview', icon: IconSummary },
-            { name: 'All Warehouses', icon: IconList }
+            { name: 'All warehouses', icon: IconList }
         ] 
     },
     { 
-        name: 'Storage and Cost', 
+        name: 'Storage and cost', 
         icon: IconDatabase, 
         children: [
             { name: 'Storage summary', icon: IconSummary },

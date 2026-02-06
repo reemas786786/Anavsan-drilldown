@@ -68,7 +68,6 @@ export const resourceSnapshotData = {
     compute: '44.25K',
 };
 
-// Updated to show three high-impact suggestions as requested
 export const finopsRecommendations = [
     { id: 'rec-1', title: 'Idle Warehouse', tag: 'WH', description: 'Warehouse COMPUTE_WH has been idle for 2 hours.' },
     { id: 'rec-2', title: 'Table Scan', tag: 'Query', description: 'Query q-9482103 is performing a full table scan on FACT_SALES.' },
@@ -156,8 +155,11 @@ export const recommendationsData: Recommendation[] = (function() {
     const recs: Recommendation[] = [];
     const resourceTypes: ResourceType[] = ['Query', 'Warehouse', 'Storage', 'Database', 'User', 'Application', 'Account'];
     const accounts = ['Finance Prod', 'Account B', 'Account C', 'Account D', 'Account E', 'Account F', 'Account G', 'Account H'];
+    const appNames = ['Production ETL', 'Tableau BI Dashboards', 'Log Ingestion Service', 'SageMaker ML Model', 'Inventory Sync Job'];
     const severities: SeverityImpact[] = ['High', 'Medium', 'Low', 'Cost Saving', 'Performance Boost', 'High Cost'];
     const statuses: RecommendationStatus[] = ['New', 'Read', 'In Progress', 'Resolved', 'Archived'];
+    const users = ['jane_doe', 'mike_fin', 'admin_user', 'data_eng_1', 'analyst_pro'];
+    const warehouses = ['COMPUTE_WH', 'ETL_WH', 'ANALYTICS_WH', 'TRANSFORM_WH'];
     
     const insightTypes: Record<ResourceType, string[]> = {
         'Query': ['Table Scan Optimization', 'Join Inefficiency', 'Redundant CTE', 'Inefficient Filter', 'Execution Skew'],
@@ -171,38 +173,184 @@ export const recommendationsData: Recommendation[] = (function() {
     };
 
     const messages: Record<string, string> = {
-        'Table Scan Optimization': "Potential full table scan detected. The query scans large volumes without efficient pruning.",
-        'Warehouse Rightsizing': "Warehouse is consistently under-utilized. Consider reducing size to save credits.",
-        'Stale Data Cleanup': "Table has not been accessed in over 90 days. Consider dropping or archiving.",
-        'Unexpected Consumption Spike': "Resource consumed 40% more credits than usual in the last 24h.",
-        'Join Inefficiency': "Complex nested join causing high CPU utilization. Consider denormalization or refactoring.",
-        'Idle Warehouse Detection': "Warehouse remained active with 0 queries for several hours.",
-        'Suspicious Activity': "User account exhibiting unusual login patterns and high-volume data egress.",
-        'Budget Threshold Warning': "Account is projected to exceed allocated budget by 15%."
+        'Table Scan Optimization': "A JOIN in this query has no join condition (at node [1]), which produces many more rows than the total number of rows that went in.",
+        'Warehouse Rightsizing': "Your warehouse is currently operating at only 12% utilization while being provisioned at LARGE. Scaling down will immediately reduce cost without impacting performance.",
+        'Stale Data Cleanup': "We detected tables that have not been accessed in over 90 days. These are incurring storage costs without providing business value.",
+        'Unexpected Consumption Spike': "Resource usage spiked by 42% in the last 24 hours. This typically indicates an unoptimized batch job or a new data-heavy dashboard refresh.",
+        'Join Inefficiency': "This query utilizes a nested loop join across two large tables. Adding a proper equality condition or pre-filtering partitions could significantly speed up execution.",
+        'Idle Warehouse Detection': "Warehouse COMPUTE_WH remained active with zero running queries for a continuous 3-hour window. Auto-suspend settings are likely too high.",
+        'Suspicious Activity': "Unusual account behavior detected. High-volume data export patterns from a standard analyst role might indicate a security risk.",
+        'Budget Threshold Warning': "At current consumption rates, this account is projected to exceed its allocated monthly budget by 18% within the next 4 days."
     };
 
+    const suggestions: Record<string, string> = {
+        'Table Scan Optimization': "Adding at least one condition to define the relationship between columns in the joined data sets could speed up this query by reducing the number of rows that it produces.",
+        'Warehouse Rightsizing': "We recommend resizing the ETL_WH from LARGE to SMALL. This adjustment aligns with your average workload profile and is estimated to save 1,450 credits per month.",
+        'Stale Data Cleanup': "Identify and drop unused tables or migrate them to a cheaper archival tier. Start by reviewing the 'STG_OLD_EVENTS' table which hasn't been queried since Q2.",
+        'Unexpected Consumption Spike': "Investigate the 'Daily Revenue Sync' job. Review recent commits to the SQL logic as a change in filtering might be causing full table scans.",
+        'Join Inefficiency': "Apply a join condition using indexed columns. Our optimizer suggests using the 'org_id' and 'event_date' columns to leverage Snowflake's partition pruning.",
+        'Idle Warehouse Detection': "Decrease the auto-suspend timer to 60 seconds. This ensures you only pay for active compute while maintaining sub-second resume capabilities.",
+        'Suspicious Activity': "Enforce multi-factor authentication (MFA) and temporarily restrict data export privileges for this user until the activity is verified.",
+        'Budget Threshold Warning': "Review active queries for the past 24h. Consider scaling down non-critical development warehouses until the next billing cycle begins."
+    };
+
+    const sqlQueries = [
+        `WITH 
+  monthly_customer_revenue AS (
+    SELECT 
+      DATE_TRUNC('month', order_date) as sales_month,
+      customer_id,
+      SUM(total_amount) as revenue
+    FROM snowflake_db.public.sales_orders
+    WHERE order_date >= DATEADD(year, -1, CURRENT_DATE())
+      AND status = 'COMPLETED'
+    GROUP BY 1, 2
+  ),
+  customer_growth AS (
+    SELECT 
+      sales_month,
+      customer_id,
+      revenue,
+      LAG(revenue) OVER (PARTITION BY customer_id ORDER BY sales_month) as prev_month_revenue
+    FROM monthly_customer_revenue
+  ),
+  top_tier_customers AS (
+    SELECT 
+      cg.sales_month,
+      c.first_name,
+      c.last_name,
+      c.email,
+      cg.revenue,
+      cg.prev_month_revenue,
+      ((cg.revenue - cg.prev_month_revenue) / NULLIF(cg.prev_month_revenue, 0)) * 100 as growth_percentage
+    FROM customer_growth cg
+    INNER JOIN snowflake_db.public.customers c ON cg.customer_id = c.id
+    WHERE cg.revenue > 10000
+  )
+SELECT 
+  sales_month,
+  first_name || ' ' || last_name as full_name,
+  revenue,
+  growth_percentage
+FROM top_tier_customers
+WHERE growth_percentage > 10
+ORDER BY sales_month DESC, revenue DESC
+LIMIT 500;`,
+        `SELECT 
+    p.category,
+    p.product_name,
+    SUM(oi.quantity) as total_units_sold,
+    SUM(oi.quantity * p.price) as gross_revenue,
+    AVG(p.price) as average_price,
+    COUNT(DISTINCT o.id) as number_of_orders
+FROM production_db.inventory.products p
+JOIN production_db.sales.order_items oi ON p.id = oi.product_id
+JOIN production_db.sales.orders o ON oi.order_id = o.id
+WHERE o.order_date BETWEEN '2023-01-01' AND '2023-12-31'
+  AND p.status = 'ACTIVE'
+  AND o.region IN ('NORTH_AMERICA', 'EUROPE', 'ASIA_PACIFIC')
+GROUP BY 1, 2
+HAVING gross_revenue > 50000
+ORDER BY gross_revenue DESC;`,
+        `INSERT INTO warehouse_metrics.usage.daily_summary (
+    summary_date,
+    warehouse_id,
+    total_queries,
+    avg_execution_time_ms,
+    total_credits_used,
+    p95_queue_time_ms
+)
+SELECT 
+    CURRENT_DATE() - 1 as summary_date,
+    wh.id as warehouse_id,
+    COUNT(qh.query_id) as total_queries,
+    AVG(qh.execution_time) as avg_execution_time_ms,
+    SUM(qh.credits_used) as total_credits_used,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY qh.queued_time) as p95_queue_time_ms
+FROM snowflake.account_usage.query_history qh
+JOIN snowflake.account_usage.warehouses wh ON qh.warehouse_name = wh.name
+WHERE qh.start_time >= DATEADD(day, -1, CURRENT_DATE())
+  AND qh.start_time < CURRENT_DATE()
+GROUP BY 1, 2;`,
+        `DELETE FROM staging_db.raw_data.ingestion_logs
+WHERE ingested_at < DATEADD(month, -3, CURRENT_TIMESTAMP())
+  AND status = 'PROCESSED'
+  AND id NOT IN (
+    SELECT log_id 
+    FROM archive_db.logs.critical_incidents 
+    WHERE created_at >= DATEADD(month, -6, CURRENT_TIMESTAMP())
+  );`,
+        `WITH 
+  user_activity AS (
+    SELECT 
+      user_id,
+      session_id,
+      MIN(event_timestamp) as session_start,
+      MAX(event_timestamp) as session_end,
+      COUNT(event_id) as total_events
+    FROM web_events.tracking.clicks
+    GROUP BY 1, 2
+  ),
+  session_durations AS (
+    SELECT 
+      user_id,
+      DATEDIFF('minute', session_start, session_end) as duration_minutes,
+      total_events
+    FROM user_activity
+    WHERE session_end > session_start
+  )
+SELECT 
+  u.user_segment,
+  AVG(sd.duration_minutes) as avg_session_length,
+  AVG(sd.total_events) as avg_events_per_session,
+  COUNT(DISTINCT u.id) as active_users
+FROM session_durations sd
+JOIN web_events.core.users u ON sd.user_id = u.id
+GROUP BY 1
+ORDER BY active_users DESC;`
+    ];
+
     for (let i = 1; i <= 150; i++) {
-        const type = resourceTypes[i % resourceTypes.length];
+        let type = resourceTypes[i % resourceTypes.length];
         const account = accounts[i % accounts.length];
         const insightList = insightTypes[type];
         const insight = insightList[i % insightList.length];
         const severity = severities[i % severities.length];
         const status = statuses[i % statuses.length];
         
+        // Strategy: Force associations with existing entities for smooth navigation
+        let affectedResource = '';
+        if (type === 'Application') {
+            affectedResource = appNames[i % appNames.length];
+        } else if (type === 'Query') {
+            affectedResource = `q-${Math.floor(Math.random() * 9000000 + 1000000)}`;
+            // Mix in some application associations via the message
+            const appAssoc = appNames[i % appNames.length];
+            if (i % 2 === 0) affectedResource = `${appAssoc} - ${affectedResource}`;
+        } else if (type === 'Warehouse') {
+            affectedResource = warehouses[i % warehouses.length];
+        } else {
+            affectedResource = `${type.toUpperCase()}_${Math.floor(Math.random() * 50) + 1}`;
+        }
+        
         recs.push({
             id: `REC-${String(i).padStart(3, '0')}`,
             resourceType: type,
-            affectedResource: type === 'Query' ? `q-${Math.floor(Math.random() * 9000000 + 1000000)}` : `${type.toUpperCase()}_${Math.floor(Math.random() * 50) + 1}`,
+            affectedResource: affectedResource,
             severity: severity,
             insightType: insight,
             message: messages[insight] || `Detected ${insight.toLowerCase()} impacting resource efficiency and cost performance.`,
-            detailedExplanation: `Analyzed workload from the past 7 days. Implementation of this recommendation could lead to significant performance improvements.`,
+            suggestion: suggestions[insight] || `Implement recommended configuration changes and review execution plans to optimize resource utilization.`,
+            detailedExplanation: `Analyzed workload from the past 7 days. Implementation of this recommendation could lead to significant performance improvements and cost reduction. System telemetry indicates higher than normal resource locking during peak hours.`,
             timestamp: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString(),
             accountName: account,
+            userName: users[i % users.length],
+            warehouseName: warehouses[i % warehouses.length],
             status: status,
             metrics: {
                 creditsBefore: Math.random() * 100 + 5,
-                estimatedSavings: Math.random() * 50 + 1
+                estimatedSavings: Math.random() * 50 + 1,
+                queryText: sqlQueries[i % sqlQueries.length]
             }
         });
     }

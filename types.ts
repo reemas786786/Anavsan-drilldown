@@ -2,34 +2,34 @@
 import React from 'react';
 
 export type Page = 
-  | 'Data Cloud Overview'
+  | 'AI data cloud overview'
   | 'Dashboards'
   | 'Accounts' 
-  | 'Snowflake Accounts'
+  | 'Snowflake accounts'
   | 'Recommendations'
-  | 'Resource Summary'
-  | 'Query Workspace'
-  | 'Query Vault'
-  | 'Assigned Queries'
+  | 'Resource summary'
+  | 'Query workspace'
+  | 'Query vault'
+  | 'Assigned queries'
   | 'Reports' 
-  | 'AI Agent' 
-  | 'Activity Logs'
-  | 'System Logs'
-  | 'Query Logs'
+  | 'AI agent' 
+  | 'Activity logs'
+  | 'System logs'
+  | 'Query logs'
   | 'Integrations'
-  | 'User Management'
+  | 'User management'
   | 'Notifications'
-  | 'Book a Demo'
+  | 'Book a demo'
   | 'Docs'
   | 'Settings' 
   | 'Support'
-  | 'Profile Settings'
+  | 'Profile settings'
   | 'Billing'
-  | 'Your Plan'
-  | 'Change Plan'
-  | 'Payment Methods'
-  | 'Billing History'
-  | 'Team Consumption';
+  | 'Your plan'
+  | 'Change plan'
+  | 'Payment methods'
+  | 'Billing history'
+  | 'Team consumption';
 
 export interface NavSubItem {
     name: string;
@@ -488,6 +488,9 @@ export interface Recommendation {
     timestamp: string;
     accountName: string;
     status: RecommendationStatus;
+    userName?: string;
+    warehouseName?: string;
+    suggestion?: string;
     metrics?: {
         executionTime?: string;
         creditsBefore?: number;
@@ -497,6 +500,7 @@ export interface Recommendation {
         sizeGB?: number;
         lastAccessed?: string;
         queryText?: string;
+        suggestedQueryText?: string;
     }
 }
 

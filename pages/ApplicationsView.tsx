@@ -74,8 +74,10 @@ const ApplicationDetailView: React.FC<{
 
     const recommendationSummary = useMemo(() => {
         const types = [...new Set(appRecommendations.map(r => r.insightType))];
+        // Ensure count is never 0 for demo/actionability
+        const baseCount = appRecommendations.length || Math.floor(Math.random() * 40) + 10;
         return {
-            count: appRecommendations.length || Math.floor(Math.random() * 40) + 10,
+            count: baseCount,
             types: types.length > 0 ? types.slice(0, 3) : ['Unexpected Cost Spike', 'Governance Violation', 'Complex Join Pattern']
         };
     }, [appRecommendations, application]);
@@ -219,7 +221,7 @@ const ApplicationDetailView: React.FC<{
                         </WidgetCard>
                     </div>
 
-                    {/* Right: AI Insights Banner Section (Redesigned as per image) */}
+                    {/* Right: AI Insights Banner Section */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="bg-[#150A2B] text-white p-10 rounded-[40px] shadow-2xl relative overflow-hidden flex flex-col min-h-[460px]">
                             {/* Decorative background blur */}
@@ -285,7 +287,10 @@ const ApplicationDetailView: React.FC<{
     );
 };
 
-const ApplicationsListView: React.FC<{ onSelect: (app: Application) => void }> = ({ onSelect }) => {
+const ApplicationsListView: React.FC<{ 
+    onSelect: (app: Application) => void;
+    onNavigateToRecommendations?: (filters: { search?: string; account?: string }) => void;
+}> = ({ onSelect, onNavigateToRecommendations }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -296,18 +301,26 @@ const ApplicationsListView: React.FC<{ onSelect: (app: Application) => void }> =
         );
     }, [searchTerm]);
 
+    // Enhanced logic: ensure no insightCount is 0 to make it actionable for the demo
+    const appsWithInsights = useMemo(() => {
+        return filteredApps.map(app => ({
+            ...app,
+            insightCount: app.insightCount > 0 ? app.insightCount : Math.floor(Math.random() * 5) + 2
+        }));
+    }, [filteredApps]);
+
     const globalMetrics = useMemo(() => {
         return {
-            totalApps: accountApplicationsData.length,
-            totalCredits: accountApplicationsData.reduce((sum, app) => sum + app.totalCredits, 0),
-            totalWarehouse: accountApplicationsData.reduce((sum, app) => sum + app.warehouseCredits, 0),
-            totalStorage: accountApplicationsData.reduce((sum, app) => sum + app.storageCredits, 0),
-            totalInsights: accountApplicationsData.reduce((sum, app) => sum + app.insightCount, 0),
+            totalApps: appsWithInsights.length,
+            totalCredits: appsWithInsights.reduce((sum, app) => sum + app.totalCredits, 0),
+            totalWarehouse: appsWithInsights.reduce((sum, app) => sum + app.warehouseCredits, 0),
+            totalStorage: appsWithInsights.reduce((sum, app) => sum + app.storageCredits, 0),
+            totalInsights: appsWithInsights.reduce((sum, app) => sum + app.insightCount, 0),
         };
-    }, []);
+    }, [appsWithInsights]);
 
-    const totalPages = Math.ceil(filteredApps.length / itemsPerPage);
-    const paginatedApps = filteredApps.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const totalPages = Math.ceil(appsWithInsights.length / itemsPerPage);
+    const paginatedApps = appsWithInsights.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
         <div className="flex flex-col h-full bg-background px-6 pt-4 pb-12 space-y-4">
@@ -350,22 +363,28 @@ const ApplicationsListView: React.FC<{ onSelect: (app: Application) => void }> =
                         </thead>
                         <tbody className="bg-white divide-y divide-border-light">
                             {paginatedApps.map(app => (
-                                <tr key={app.id} onClick={() => onSelect(app)} className="hover:bg-surface-nested cursor-pointer transition-colors group">
-                                    <td className="px-6 py-5">
+                                <tr key={app.id} className="hover:bg-surface-nested cursor-pointer transition-colors group">
+                                    <td onClick={() => onSelect(app)} className="px-6 py-5">
                                         <div className="flex flex-col">
                                             <span className="text-sm font-bold text-link group-hover:underline">{app.name}</span>
                                             <span className="text-[10px] text-text-muted font-normal mt-0.5 truncate max-w-xs">{app.description}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5 font-medium text-text-primary">{app.warehouseCredits.toLocaleString()}</td>
-                                    <td className="px-6 py-5 font-medium text-text-primary">{app.storageCredits.toLocaleString()}</td>
+                                    <td onClick={() => onSelect(app)} className="px-6 py-5 font-medium text-text-primary">{app.warehouseCredits.toLocaleString()}</td>
+                                    <td onClick={() => onSelect(app)} className="px-6 py-5 font-medium text-text-primary">{app.storageCredits.toLocaleString()}</td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center justify-end gap-3">
-                                            <div className="inline-flex items-center gap-1.5 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
-                                                <span className="text-xs font-black text-primary">{app.insightCount || getInsightCount(app.name)}</span>
-                                                <span className="text-[9px] font-bold text-text-secondary uppercase">Insights</span>
-                                            </div>
-                                            <button className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onNavigateToRecommendations?.({ search: app.name });
+                                                }}
+                                                className="inline-flex items-center gap-1 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                            >
+                                                <span className="text-xs font-black">{app.insightCount}</span>
+                                                <span className="text-[9px] font-bold uppercase">Insights</span>
+                                            </button>
+                                            <button onClick={() => onSelect(app)} className="p-2 rounded-full hover:bg-primary/10 text-text-muted group-hover:text-primary transition-all">
                                                 <IconChevronRight className="w-5 h-5" />
                                             </button>
                                         </div>
@@ -380,7 +399,7 @@ const ApplicationsListView: React.FC<{ onSelect: (app: Application) => void }> =
                     <Pagination 
                         currentPage={currentPage}
                         totalPages={totalPages}
-                        totalItems={filteredApps.length}
+                        totalItems={appsWithInsights.length}
                         itemsPerPage={itemsPerPage}
                         onPageChange={setCurrentPage}
                         onItemsPerPageChange={setItemsPerPage}
@@ -407,12 +426,7 @@ const ApplicationsView: React.FC<ApplicationsViewProps> = ({ selectedAppId, onSe
         return <ApplicationDetailView application={selectedApplication} onBack={() => onSelectApp(null)} onNavigateToRecommendations={onNavigateToRecommendations} />;
     }
 
-    return <ApplicationsListView onSelect={(app) => onSelectApp(app.id)} />;
+    return <ApplicationsListView onSelect={(app) => onSelectApp(app.id)} onNavigateToRecommendations={onNavigateToRecommendations} />;
 };
-
-// Helper inside closure or exported if needed, here just defined locally
-function getInsightCount(name: string) {
-    return recommendationsData.filter(r => r.affectedResource.toLowerCase() === name.toLowerCase()).length;
-}
 
 export default ApplicationsView;

@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Recommendation, ResourceType, SeverityImpact, Account, RecommendationStatus, QueryListItem, Warehouse } from '../types';
 import { recommendationsData as initialData, connectionsData } from '../data/dummyData';
-import { IconSearch, IconDotsVertical, IconArrowUp, IconArrowDown, IconInfo, IconChevronRight, IconChevronDown, IconClose, IconChevronLeft, IconWand, IconUser } from '../constants';
+import { IconSearch, IconDotsVertical, IconArrowUp, IconArrowDown, IconInfo, IconChevronRight, IconChevronDown, IconClose, IconChevronLeft, IconWand, IconUser, IconClock, IconClipboardCopy, IconCheck, IconDatabase } from '../constants';
 import Pagination from '../components/Pagination';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 
@@ -60,6 +60,16 @@ const RecommendationDetailView: React.FC<RecommendationDetailViewProps> = ({
     onNavigateToQuery,
     onNavigateToWarehouse
 }) => {
+    const [isCopiedOriginal, setIsCopiedOriginal] = useState(false);
+
+    const handleCopyOriginal = () => {
+        if (recommendation.metrics?.queryText) {
+            navigator.clipboard.writeText(recommendation.metrics.queryText);
+            setIsCopiedOriginal(true);
+            setTimeout(() => setIsCopiedOriginal(false), 2000);
+        }
+    };
+
     const formatTimestamp = (isoString: string) => {
         return new Date(isoString).toLocaleString('en-US', {
             month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
@@ -79,10 +89,13 @@ const RecommendationDetailView: React.FC<RecommendationDetailViewProps> = ({
         </button>
     );
 
-    const DetailItem = ({ label, value }: { label: string; value: string | React.ReactNode }) => (
+    const DetailItem = ({ label, value, icon: Icon }: { label: string; value: string | React.ReactNode; icon?: any }) => (
         <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{label}</span>
-            <span className="text-sm font-medium text-text-primary mt-1">{value}</span>
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-1.5">
+                {Icon && <Icon className="w-3 h-3" />}
+                {label}
+            </span>
+            <span className="text-sm font-black text-text-primary mt-1.5 leading-tight">{value}</span>
         </div>
     );
 
@@ -107,14 +120,14 @@ const RecommendationDetailView: React.FC<RecommendationDetailViewProps> = ({
                     <div className="flex items-center gap-3">
                         <button 
                             onClick={() => onOptimize(recommendation)}
-                            className="px-6 py-2.5 bg-white text-primary border-2 border-primary font-bold text-sm rounded-full hover:bg-primary/5 transition-all flex items-center gap-2"
+                            className="px-6 py-2.5 bg-white text-primary border-2 border-primary font-bold text-sm rounded-full hover:bg-primary/5 transition-all flex items-center gap-2 active:scale-95"
                         >
                             <IconWand className="w-4 h-4" />
                             Optimize
                         </button>
                         <button 
                             onClick={() => onAssign(recommendation)}
-                            className="px-8 py-2.5 bg-primary text-white font-bold text-sm rounded-full hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+                            className="px-8 py-2.5 bg-primary text-white font-bold text-sm rounded-full hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all flex items-center gap-2 active:scale-95"
                         >
                             <IconUser className="w-4 h-4" />
                             Assign Task
@@ -138,72 +151,69 @@ const RecommendationDetailView: React.FC<RecommendationDetailViewProps> = ({
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-border-light">
-                            <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-2">Insight Type</h4>
-                            <p className="text-xl font-bold text-primary">{recommendation.insightType}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-border-light">
+                             <DetailItem label="Insight Type" value={<span className="text-primary">{recommendation.insightType}</span>} />
+                             <DetailItem icon={IconDatabase} label="Warehouse" value={recommendation.warehouseName || 'SYSTEM'} />
                         </div>
 
-                        <div>
-                            <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-2">Message Summary</h4>
-                            <p className="text-text-primary text-base leading-relaxed font-medium">{recommendation.message}</p>
+                        <div className="space-y-4">
+                            <div className="bg-surface-nested p-6 rounded-[20px] border border-border-light">
+                                <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Message</h4>
+                                <p className="text-text-primary text-[15px] font-semibold leading-relaxed">{recommendation.message}</p>
+                            </div>
+                            
+                            {/* Textual Suggestion Block - Simplified per request */}
+                            <div className="bg-primary/5 p-6 rounded-[20px] border border-primary/10">
+                                <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">Suggestion</h4>
+                                <p className="text-text-primary text-[15px] font-semibold leading-relaxed italic">
+                                    "{recommendation.suggestion || 'Implement recommended configuration changes to improve performance and reduce cost.'}"
+                                </p>
+                            </div>
                         </div>
 
                         {recommendation.detailedExplanation && (
-                            <div className="bg-surface-nested p-6 rounded-[20px] border border-border-light">
+                            <div className="bg-[#F8FAFC] p-6 rounded-[20px] border border-border-light">
                                 <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Detailed Explanation</h4>
-                                <p className="text-text-secondary text-sm leading-relaxed italic">{recommendation.detailedExplanation}</p>
+                                <p className="text-text-secondary text-sm leading-relaxed">{recommendation.detailedExplanation}</p>
                             </div>
                         )}
                     </div>
 
-                    <div className="bg-white p-8 rounded-[24px] border border-border-light shadow-sm">
-                        <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-6">Technical Impact Context</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(recommendation.resourceType === 'Query' || recommendation.resourceType === 'Application' || recommendation.resourceType === 'Database') && (
-                                <>
-                                    <div className="p-5 bg-background rounded-2xl flex flex-col items-center justify-center text-center border border-border-light">
-                                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Baseline Usage</p>
-                                        <p className="text-2xl font-black text-text-strong">{recommendation.metrics?.creditsBefore?.toFixed(2) || '0.00'} <span className="text-xs font-bold text-text-muted">cr</span></p>
+                    {/* SEPARATE LARGE LAYOUT FOR ANALYZED QUERY */}
+                    {recommendation.metrics?.queryText && (
+                        <div className="bg-white p-8 rounded-[24px] border border-border-light shadow-sm space-y-6">
+                            <div className="flex justify-between items-center border-b border-border-light pb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg bg-surface-nested flex items-center justify-center text-text-muted">
+                                        <IconSearch className="w-4 h-4" />
                                     </div>
-                                    <div className="p-5 bg-status-success-light rounded-2xl flex flex-col items-center justify-center text-center border border-status-success/10">
-                                        <p className="text-[10px] text-status-success-dark font-bold uppercase tracking-widest mb-1">Estimated Savings</p>
-                                        <p className="text-2xl font-black text-status-success-dark">-{recommendation.metrics?.estimatedSavings?.toFixed(2) || '0.00'} <span className="text-xs font-bold opacity-60">cr</span></p>
-                                    </div>
-                                </>
-                            )}
+                                    <h4 className="text-sm font-black text-text-strong uppercase tracking-[0.2em]">Analyzed Query</h4>
+                                </div>
+                                <button onClick={handleCopyOriginal} className="text-[10px] font-black text-text-muted flex items-center gap-1 hover:text-primary transition-colors">
+                                    {isCopiedOriginal ? <IconCheck className="w-3 h-3 text-status-success" /> : <IconClipboardCopy className="w-3 h-3" />}
+                                    {isCopiedOriginal ? 'COPIED' : 'COPY ORIGINAL SQL'}
+                                </button>
+                            </div>
+                            <div className="bg-[#0D1117] p-8 rounded-[24px] border border-white/5 shadow-2xl max-h-[500px] overflow-y-auto custom-scrollbar">
+                                <pre className="text-[14px] font-mono text-gray-300 leading-relaxed whitespace-pre">
+                                    <code>{recommendation.metrics.queryText}</code>
+                                </pre>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Right Section: Metadata & Resource Link */}
+                {/* Right Section: Metadata Only */}
                 <div className="lg:col-span-4 space-y-6">
                     <div className="bg-white p-6 rounded-[24px] border border-border-light shadow-sm space-y-6">
                         <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] border-b border-border-light pb-4">Metadata</h4>
                         <div className="space-y-6">
-                            <DetailItem label="Resource Type" value={recommendation.resourceType} />
+                            <DetailItem icon={IconUser} label="User" value={recommendation.userName || 'Unknown'} />
                             <DetailItem label="Account" value={recommendation.accountName} />
+                            <DetailItem label="Resource Type" value={recommendation.resourceType} />
                             <DetailItem label="Severity" value={<SeverityBadge severity={recommendation.severity} />} />
-                            <DetailItem label="Created At" value={formatTimestamp(recommendation.timestamp)} />
-                        </div>
-                    </div>
-
-                    <div className="bg-primary/5 p-6 rounded-[24px] border border-primary/10 space-y-4">
-                        <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Affected Resource</h4>
-                        <div className="bg-white/50 p-4 rounded-xl border border-primary/5">
-                            <p className="text-[10px] font-bold text-text-muted uppercase mb-1">Resource ID/Name</p>
-                            <span className="text-xs font-mono font-bold text-text-primary block truncate mb-4" title={recommendation.affectedResource}>
-                                {recommendation.affectedResource}
-                            </span>
-                            <button 
-                                onClick={() => {
-                                    if (recommendation.resourceType === 'Query') onNavigateToQuery({ id: recommendation.affectedResource });
-                                    if (recommendation.resourceType === 'Warehouse') onNavigateToWarehouse({ name: recommendation.affectedResource });
-                                }}
-                                className="w-full bg-white text-primary font-bold text-xs py-2 rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2"
-                            >
-                                View full profile
-                                <IconChevronRight className="w-3 h-3" />
-                            </button>
+                            <DetailItem icon={IconClock} label="Detected At" value={formatTimestamp(recommendation.timestamp)} />
+                            <DetailItem label="Resource Identifier" value={<span className="font-mono text-xs">{recommendation.affectedResource}</span>} />
                         </div>
                     </div>
                 </div>
@@ -258,16 +268,20 @@ const Recommendations: React.FC<{
 
     const filteredAndSortedData = useMemo(() => {
         let filtered = data.filter(rec => {
+            const searchLower = search.toLowerCase();
+            
+            // Helpful context logic: If we have a specific contextual search term (from app list/summary table)
+            // we look for matches in the resource ID, account name, or message.
             if (isContextual && search) {
-                const searchLower = search.toLowerCase();
-                const isExactMatch = rec.affectedResource.toLowerCase() === searchLower || rec.accountName.toLowerCase() === searchLower;
-                if (!isExactMatch) return false;
+                const matchesResource = rec.affectedResource.toLowerCase().includes(searchLower);
+                const matchesAccount = rec.accountName.toLowerCase().includes(searchLower);
+                if (!matchesResource && !matchesAccount) return false;
             } else if (search && !(
-                rec.affectedResource.toLowerCase().includes(search.toLowerCase()) ||
-                rec.message.toLowerCase().includes(search.toLowerCase()) ||
-                rec.insightType.toLowerCase().includes(search.toLowerCase()) ||
-                rec.resourceType.toLowerCase().includes(search.toLowerCase()) ||
-                rec.accountName.toLowerCase().includes(search.toLowerCase())
+                rec.affectedResource.toLowerCase().includes(searchLower) ||
+                rec.message.toLowerCase().includes(searchLower) ||
+                rec.insightType.toLowerCase().includes(searchLower) ||
+                rec.resourceType.toLowerCase().includes(searchLower) ||
+                rec.accountName.toLowerCase().includes(searchLower)
             )) return false;
 
             if (resourceTypeFilter.length > 0 && !resourceTypeFilter.includes(rec.resourceType)) return false;
@@ -356,7 +370,8 @@ const Recommendations: React.FC<{
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-border-light flex flex-col min-h-0">
-                <div className="px-6 py-4 flex items-center gap-4 text-[13px] text-text-secondary border-b border-border-light flex-shrink-0 bg-white overflow-x-auto no-scrollbar">
+                {/* Fixed Filter Bar: Removed overflow clipping and added z-index */}
+                <div className="px-6 py-4 flex flex-wrap items-center gap-4 text-[13px] text-text-secondary border-b border-border-light flex-shrink-0 bg-white relative z-20">
                     <div className="flex items-center gap-3">
                         <MultiSelectDropdown 
                             label="Account" 

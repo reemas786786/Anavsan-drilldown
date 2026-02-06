@@ -69,29 +69,29 @@ const SidePanel: React.FC<SidePanelProps> = ({ isOpen, onClose, title, children,
         role="dialog" 
         aria-modal="true"
     >
-      {/* Overlay - Hidden if full screen */}
+      {/* Overlay - Shifted top-12 to stay under header if not full screen */}
       {!isFullScreen && (
         <div 
-          className={`fixed top-0 inset-x-0 bottom-0 bg-black/30 transition-opacity duration-500 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+          className={`fixed top-12 inset-x-0 bottom-0 bg-black/30 transition-opacity duration-500 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
           aria-hidden="true"
           onClick={onClose}
         ></div>
       )}
 
-      {/* Side Panel Container */}
-      <div className={`fixed ${isFullScreen ? 'inset-0 top-0' : 'top-0 bottom-0 right-0 max-w-full pl-10'} flex transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      {/* Side Panel Container - Shifted top-12 to stay under header */}
+      <div className={`fixed ${isFullScreen ? 'inset-0 top-0' : 'top-12 bottom-0 right-0 max-w-full pl-10'} flex transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className={`w-screen ${isFullScreen ? '' : 'max-w-xl'}`}>
           <div className="flex h-full flex-col bg-white">
-            {/* Header */}
+            {/* Header - White background as per user screenshot */}
             {!isFullScreen && (
-              <div className="bg-[#F9F7FE] px-6 py-5 flex-shrink-0 border-b border-border-light">
+              <div className="bg-white px-8 py-6 flex-shrink-0 border-b border-border-light">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-sidebar-topbar" id="slide-over-title">
+                  <h2 className="text-xl font-bold text-sidebar-topbar tracking-tight" id="slide-over-title">
                     {title}
                   </h2>
                   <button
                     type="button"
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-primary border border-primary/20 hover:bg-primary/5 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-11 h-11 flex items-center justify-center rounded-full text-primary border-2 border-primary hover:bg-primary/5 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     onClick={onClose}
                   >
                     <span className="sr-only">Close panel</span>
@@ -102,7 +102,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ isOpen, onClose, title, children,
             )}
             
             {/* Content */}
-            <div className="relative flex-1 overflow-y-auto">
+            <div className="relative flex-1 overflow-y-auto no-scrollbar">
               {children}
             </div>
           </div>

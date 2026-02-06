@@ -129,10 +129,18 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, on
     const filteredTopItems = useMemo(() => {
         return NAV_ITEMS_TOP.filter(item => {
             if (userRole === 'FinOps') {
-                return ['Data Cloud Overview', 'Dashboards', 'Recommendations', 'Accounts', 'Query Workspace', 'Reports'].includes(item.name);
+                /**
+                 * Fix: Corrected string literals to match the Page type definition from types.ts
+                 * 'AI data cloud overview', 'Query workspace', 'AI agent' etc.
+                 */
+                return ['AI data cloud overview', 'Dashboards', 'Recommendations', 'Accounts', 'Query workspace', 'Reports'].includes(item.name);
             }
             if (userRole === 'DataEngineer') {
-                return ['Data Cloud Overview', 'Dashboards', 'Recommendations', 'Query Workspace', 'AI Agent'].includes(item.name);
+                /**
+                 * Fix: Corrected string literals to match the Page type definition from types.ts
+                 * 'AI data cloud overview', 'Query workspace', 'AI agent' etc.
+                 */
+                return ['AI data cloud overview', 'Dashboards', 'Recommendations', 'Query workspace', 'AI agent'].includes(item.name);
             }
             return true;
         });
@@ -146,7 +154,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, on
             if (item.name === 'Billing' && subscriptionPlan === 'Individual') {
                 return {
                     ...item,
-                    subItems: item.subItems?.filter(si => si.name !== 'Team Consumption')
+                    /**
+                     * Fix: Corrected string literal to match NavSubItem name in constants.tsx
+                     * 'Team consumption'
+                     */
+                    subItems: item.subItems?.filter(si => si.name !== 'Team consumption')
                 };
             }
             return item;
@@ -154,7 +166,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, on
 
         // Filter based on role
         items = items.filter(item => {
-            if (item.name === 'Activity Logs') {
+            /**
+             * Fix: Corrected string literal to match the Page type definition ('Activity logs' lowercase 'l')
+             */
+            if (item.name === 'Activity logs') {
                 if (userRole === 'FinOps') return true;
                 if (userRole === 'DataEngineer') return true;
                 if (userRole === 'Admin') return true;

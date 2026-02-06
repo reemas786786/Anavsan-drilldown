@@ -32,7 +32,7 @@ const PriorityBadge: React.FC<{ priority: AssignmentPriority }> = ({ priority })
         High: 'bg-red-50 text-red-700 border-red-200',
     };
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded border uppercase tracking-wider ${colorClasses[priority]}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded border uppercase tracking-wider ${colorClasses[priority]}`} title={`${priority} Priority`}>
             {priority}
         </span>
     );
@@ -106,12 +106,12 @@ const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, curr
                 <p className="text-sm text-text-secondary mt-1">Track queries that have been assigned to you or by you for optimization.</p>
             </header>
 
-            {/* Filter Bar Row */}
-            <div className="px-6 py-2 flex items-center justify-between whitespace-nowrap text-[13px] text-text-secondary">
+            {/* Filter Bar Row: Added relative z-20 and ensure overflow-visible for dropdowns */}
+            <div className="px-6 py-2 flex flex-wrap items-center justify-between whitespace-nowrap text-[13px] text-text-secondary relative z-20 overflow-visible bg-background rounded-lg border border-border-light">
                 <div className="flex items-center gap-8">
                     <DateRangeDropdown selectedValue={dateFilter} onChange={setDateFilter} />
                     
-                    <div className="w-px h-4 bg-border-color"></div>
+                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
                     
                     <div className="flex items-center gap-3">
                         <span className="text-text-muted font-medium">Priority:</span>
@@ -125,7 +125,7 @@ const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, curr
                         />
                     </div>
 
-                    <div className="w-px h-4 bg-border-color"></div>
+                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
 
                     <div className="flex items-center gap-3">
                         <span className="text-text-muted font-medium">Status:</span>
@@ -139,7 +139,7 @@ const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, curr
                         />
                     </div>
 
-                    <div className="w-px h-4 bg-border-color"></div>
+                    <div className="w-px h-4 bg-border-color hidden sm:block"></div>
 
                     <div className="flex items-center gap-3">
                         <span className="text-text-muted font-medium">Assignee:</span>
@@ -154,7 +154,7 @@ const AssignedQueries: React.FC<AssignedQueriesProps> = ({ assignedQueries, curr
                     </div>
                 </div>
 
-                <div className="relative w-72">
+                <div className="relative w-72 mt-2 lg:mt-0">
                     <IconSearch className="w-4 h-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2" />
                     <input 
                         type="search" 

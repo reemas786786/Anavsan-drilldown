@@ -121,12 +121,12 @@ const SlowQueriesView: React.FC<SlowQueriesViewProps> = ({
             </div>
 
             <div className="flex flex-col flex-grow min-h-0">
-                {/* Filter Bar */}
-                <div className="p-2 mb-4 flex-shrink-0 bg-surface rounded-full shadow-sm border border-border-light flex items-center gap-x-4">
+                {/* Filter Bar: Added relative z-20 and ensure overflow-visible for dropdowns */}
+                <div className="p-2 mb-4 flex-shrink-0 bg-surface rounded-full shadow-sm border border-border-light flex flex-wrap items-center gap-x-4 relative z-20 overflow-visible">
                     <div className="pl-3"><DateRangeDropdown selectedValue={filters.dateFilter} onChange={(value) => handleFilterChange('dateFilter', value)} /></div>
-                    <div className="h-4 w-px bg-border-color"></div>
+                    <div className="h-4 w-px bg-border-color hidden sm:block"></div>
                     <MultiSelectDropdown label="Warehouse" options={warehousesData.map(w => w.name)} selectedOptions={filters.warehouseFilter} onChange={(value) => handleFilterChange('warehouseFilter', value)} />
-                    <div className="h-4 w-px bg-border-color"></div>
+                    <div className="h-4 w-px bg-border-color hidden sm:block"></div>
                     <MultiSelectDropdown 
                         label="Severity" 
                         options={severityLevels} 
@@ -140,7 +140,7 @@ const SlowQueriesView: React.FC<SlowQueriesViewProps> = ({
                 </div>
 
                 {/* Cards List */}
-                <div className="overflow-y-auto flex-grow min-h-0 pr-2">
+                <div className="overflow-y-auto flex-grow min-h-0 pr-2 no-scrollbar">
                      <div className="space-y-2">
                         {sortedData.map(q => (
                             <div key={q.id} className="bg-surface p-3 rounded-xl grid grid-cols-[1fr,1fr,1fr,1fr,1fr,1fr,auto] items-center gap-4 border border-border-light hover:shadow-md transition-shadow cursor-pointer" onClick={() => onPreviewQuery(q)}>
@@ -173,7 +173,7 @@ const SlowQueriesView: React.FC<SlowQueriesViewProps> = ({
                                         <IconDotsVertical className="h-5 w-5"/>
                                     </button>
                                      {openMenuId === q.id && (
-                                        <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-lg bg-surface shadow-lg z-20 border border-border-color">
+                                        <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-lg bg-surface shadow-lg z-20 border border-border-color overflow-hidden">
                                             <div className="py-1" role="menu">
                                                 <button onClick={() => { onPreviewQuery(q); setOpenMenuId(null); }} className="w-full text-left block px-4 py-2 text-sm text-text-secondary hover:bg-surface-hover" role="menuitem">Query Preview</button>
                                                 <button onClick={() => { onAnalyzeQuery(q, 'Slow queries'); setOpenMenuId(null); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-text-secondary hover:bg-surface-hover" role="menuitem"><IconSearch className="h-4 w-4"/> Analyze</button>

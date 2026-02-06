@@ -65,8 +65,8 @@ const QueryListView: React.FC<QueryListViewProps> = ({
             </div>
             
             <div className="bg-surface rounded-2xl flex flex-col flex-grow min-h-0 shadow-sm border border-border-light overflow-hidden">
-                {/* Refined Filter Bar matching screenshot */}
-                <div className="px-4 py-3 flex items-center gap-6 text-[12px] text-text-secondary border-b border-border-light whitespace-nowrap overflow-x-auto no-scrollbar">
+                {/* Refined Filter Bar: Added relative z-20 and removed vertical clipping overflow */}
+                <div className="px-4 py-3 flex items-center gap-6 text-[12px] text-text-secondary border-b border-border-light whitespace-nowrap overflow-visible relative z-20 bg-white">
                     <DateRangeDropdown selectedValue={filters.dateFilter} onChange={(val) => handleFilterChange('dateFilter', val)} />
                     
                     <div className="w-px h-3 bg-border-color hidden sm:block"></div>
@@ -117,7 +117,7 @@ const QueryListView: React.FC<QueryListViewProps> = ({
                 </div>
 
                 {/* Table Body */}
-                <div className="overflow-y-auto flex-grow min-h-0">
+                <div className="overflow-y-auto flex-grow min-h-0 no-scrollbar">
                     <table className="w-full text-[13px] border-separate border-spacing-0">
                         <thead className="text-[11px] text-text-secondary uppercase font-bold sticky top-0 z-10 bg-white border-b border-border-light">
                             <tr>
@@ -178,7 +178,7 @@ const QueryListView: React.FC<QueryListViewProps> = ({
                     </table>
                 </div>
 
-                {/* Refined Pagination matching screenshot */}
+                {/* Refined Pagination */}
                 <div className="px-4 py-3 flex items-center justify-between bg-white border-t border-border-light text-[11px] font-medium text-text-secondary">
                     <div className="flex items-center gap-2">
                         <span>Items per page:</span>

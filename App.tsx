@@ -79,9 +79,9 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(true); 
   
-  const [activePage, setActivePage] = useState<Page>('Data Cloud Overview');
+  const [activePage, setActivePage] = useState<Page>('AI data cloud overview');
   const [activeSubPage, setActiveSubPage] = useState<string | undefined>();
-  const [resourceSummaryTab, setResourceSummaryTab] = useState<string>('Total Credits');
+  const [resourceSummaryTab, setResourceSummaryTab] = useState<string>('Total credits');
   const [recommendationFilters, setRecommendationFilters] = useState<any>(null);
   
   const [isSidebarOpen, setSidebarOpen] = useState(true); 
@@ -149,7 +149,7 @@ const App: React.FC = () => {
     setSelectedWarehouse(null);
     setSelectedApplicationId(null);
 
-    if (page === 'Resource Summary' && additionalState?.tab) {
+    if (page === 'Resource summary' && additionalState?.tab) {
         setResourceSummaryTab(additionalState.tab);
     }
 
@@ -163,10 +163,10 @@ const App: React.FC = () => {
   const breadcrumbItems = useMemo(() => {
     const homeItem: BreadcrumbItem = { 
         label: 'Home', 
-        onClick: () => handleSetActivePage('Data Cloud Overview') 
+        onClick: () => handleSetActivePage('AI data cloud overview') 
     };
 
-    if (activePage === 'Data Cloud Overview') return [homeItem];
+    if (activePage === 'AI data cloud overview') return [homeItem];
 
     const items = [homeItem];
 
@@ -197,6 +197,7 @@ const App: React.FC = () => {
         return items;
     }
 
+    // Ensure page name is handled in sentence case
     items.push({ 
         label: activePage,
         onClick: () => handleSetActivePage(activePage, activeSubPage)
@@ -254,7 +255,7 @@ const App: React.FC = () => {
       } else {
           setSubscription({ plan, status: 'active', billingCycle: cycle, nextBillingDate: '2026-02-28', seats: plan === 'Team' ? 5 : 1 });
       }
-      handleSetActivePage('Billing', 'Plans');
+      handleSetActivePage('Billing', 'Your plan');
   };
 
   const handleMarkAllNotificationsAsRead = () => {
@@ -358,27 +359,27 @@ const App: React.FC = () => {
     }
     
     switch (activePage) {
-        case 'Data Cloud Overview': return <Overview onSelectAccount={handleSelectAccount} onSelectUser={setSelectedUser} accounts={accounts} users={users} onSetBigScreenWidget={setBigScreenWidget} currentUser={currentUser} onNavigate={handleSetActivePage} onAddAccountClick={() => setSidePanel({ type: 'addAccount' })} />;
-        case 'Resource Summary': return <ResourceSummary initialTab={resourceSummaryTab} onSelectAccount={handleSelectAccount} onSelectApplication={handleSelectApplication} onNavigateToRecommendations={(filters) => handleSetActivePage('Recommendations', undefined, { filters })} />;
+        case 'AI data cloud overview': return <Overview onSelectAccount={handleSelectAccount} onSelectUser={setSelectedUser} accounts={accounts} users={users} onSetBigScreenWidget={setBigScreenWidget} currentUser={currentUser} onNavigate={handleSetActivePage} onAddAccountClick={() => setSidePanel({ type: 'addAccount' })} />;
+        case 'Resource summary': return <ResourceSummary initialTab={resourceSummaryTab} onSelectAccount={handleSelectAccount} onSelectApplication={handleSelectApplication} onNavigateToRecommendations={(filters) => handleSetActivePage('Recommendations', undefined, { filters })} />;
         case 'Accounts': return <Connections accounts={accounts} onSelectAccount={handleSelectAccount} onAddAccountClick={() => setSidePanel({ type: 'addAccount' })} onDeleteAccount={(id) => setAccounts(a => a.filter(x => x.id !== id))} />;
-        case 'AI Agent': return <AIAgent />;
+        case 'AI agent': return <AIAgent />;
         case 'Recommendations': return <Recommendations accounts={accounts} initialFilters={recommendationFilters} onNavigateToQuery={(q) => {setSelectedAccount(accounts[0]); setSelectedQuery(q as QueryListItem);}} onNavigateToWarehouse={(wh) => {setSelectedAccount(accounts[0]); setSelectedWarehouse(wh as Warehouse);}} onAssignTask={handleAssignQueryTask} selectedRecommendation={selectedRecommendation} onSelectRecommendation={setSelectedRecommendation} />;
         case 'Reports': return <Reports />;
-        case 'Query Workspace':
-            if (activeSubPage === 'Assigned Queries') return <AssignedQueries assignedQueries={assignedQueries} currentUser={currentUser} onViewQuery={(id) => {const aq = assignedQueries.find(q => q.queryId === id); if(aq) setSelectedAssignedQuery(aq);}} onResolveQuery={(id) => setAssignedQueries(p => p.filter(x => x.id !== id))} />;
-            if (activeSubPage === 'Query Vault') return <QueryLibrary sqlFiles={sqlFiles} accounts={accounts} onFileSelect={() => {}} selectedFile={null} onVersionSelect={() => {}} onBack={() => {}} onCompare={() => {}} title="Query Vault" />;
+        case 'Query workspace':
+            if (activeSubPage === 'Assigned queries') return <AssignedQueries assignedQueries={assignedQueries} currentUser={currentUser} onViewQuery={(id) => {const aq = assignedQueries.find(q => q.queryId === id); if(aq) setSelectedAssignedQuery(aq);}} onResolveQuery={(id) => setAssignedQueries(p => p.filter(x => x.id !== id))} />;
+            if (activeSubPage === 'Query vault') return <QueryLibrary sqlFiles={sqlFiles} accounts={accounts} onFileSelect={() => {}} selectedFile={null} onVersionSelect={() => {}} onBack={() => {}} onCompare={() => {}} title="Query vault" />;
             return <Overview onSelectAccount={handleSelectAccount} onSelectUser={setSelectedUser} accounts={accounts} users={users} onSetBigScreenWidget={setBigScreenWidget} currentUser={currentUser} onNavigate={handleSetActivePage} onAddAccountClick={() => setSidePanel({ type: 'addAccount' })} />;
-        case 'Assigned Queries': return <AssignedQueries assignedQueries={assignedQueries} currentUser={currentUser} onViewQuery={(id) => {const aq = assignedQueries.find(q => q.queryId === id); if(aq) setSelectedAssignedQuery(aq);}} onResolveQuery={(id) => setAssignedQueries(p => p.filter(x => x.id !== id))} />;
+        case 'Assigned queries': return <AssignedQueries assignedQueries={assignedQueries} currentUser={currentUser} onViewQuery={(id) => {const aq = assignedQueries.find(q => q.queryId === id); if(aq) setSelectedAssignedQuery(aq);}} onResolveQuery={(id) => setAssignedQueries(p => p.filter(x => x.id !== id))} />;
         case 'Billing':
-            if (activeSubPage === 'Team Consumption') return <TeamConsumption users={users} subscription={subscription} onAddUser={() => setModal({ type: 'addUser' })} onEditUserRole={() => {}} onSuspendUser={() => {}} onActivateUser={() => {}} onRemoveUser={() => {}} onCancelDowngrade={() => {}} />;
-            if (activeSubPage === 'Billing History') return <BillingHistory onNavigate={handleSetActivePage} onDownloadInvoice={() => {}} />;
+            if (activeSubPage === 'Team consumption') return <TeamConsumption users={users} subscription={subscription} onAddUser={() => setModal({ type: 'addUser' })} onEditUserRole={() => {}} onSuspendUser={() => {}} onActivateUser={() => {}} onRemoveUser={() => {}} onCancelDowngrade={() => {}} />;
+            if (activeSubPage === 'Billing history') return <BillingHistory onNavigate={handleSetActivePage} onDownloadInvoice={() => {}} />;
             return <ChangePlan users={users} currentUser={currentUser} onSubscriptionSuccess={handleSubscriptionSuccess} currentPlan={subscription.plan} subscription={subscription} />;
-        case 'Activity Logs':
-            return <NotificationsPage initialTab="Activity Log" notifications={notifications} activityLogs={activityLogs} assignedQueries={assignedQueries} onMarkAllAsRead={handleMarkAllNotificationsAsRead} onClearNotification={() => {}} users={users} onBackToOverview={() => handleSetActivePage('Data Cloud Overview')} accounts={accounts} onNavigateToWarehouse={handleNavigateToWarehouse} onNavigateToQuery={() => {}} onMarkNotificationAsRead={() => {}} onOpenAssignedQueryPreview={() => {}} />;
+        case 'Activity logs':
+            return <NotificationsPage initialTab="Activity log" notifications={notifications} activityLogs={activityLogs} assignedQueries={assignedQueries} onMarkAllAsRead={handleMarkAllNotificationsAsRead} onClearNotification={() => {}} users={users} onBackToOverview={() => handleSetActivePage('AI data cloud overview')} accounts={accounts} onNavigateToWarehouse={handleNavigateToWarehouse} onNavigateToQuery={() => {}} onMarkNotificationAsRead={() => {}} onOpenAssignedQueryPreview={() => {}} />;
         case 'Integrations': return <IntegrationsPage onDisconnect={(onConfirm) => onConfirm()} />;
         case 'Dashboards': return <Dashboards dashboards={dashboards} onDeleteDashboardClick={(d) => setDashboards(p => p.filter(x => x.id !== d.id))} onAddDashboardClick={() => {}} onEditDashboardClick={() => {}} onViewDashboardClick={setSelectedDashboard} />;
-        case 'Profile Settings': return <ProfileSettingsPage user={currentUser!} onBack={() => handleSetActivePage('Data Cloud Overview')} theme={theme} onThemeChange={(newTheme) => setTheme(newTheme as Theme)} />;
-        case 'Notifications': return <NotificationsPage notifications={notifications} activityLogs={activityLogs} assignedQueries={assignedQueries} onMarkAllAsRead={handleMarkAllNotificationsAsRead} onClearNotification={() => {}} users={users} onBackToOverview={() => handleSetActivePage('Data Cloud Overview')} accounts={accounts} onNavigateToWarehouse={handleNavigateToWarehouse} onNavigateToQuery={() => {}} onMarkNotificationAsRead={() => {}} onOpenAssignedQueryPreview={() => {}} />;
+        case 'Profile settings': return <ProfileSettingsPage user={currentUser!} onBack={() => handleSetActivePage('AI data cloud overview')} theme={theme} onThemeChange={(newTheme) => setTheme(newTheme as Theme)} />;
+        case 'Notifications': return <NotificationsPage notifications={notifications} activityLogs={activityLogs} assignedQueries={assignedQueries} onMarkAllAsRead={handleMarkAllNotificationsAsRead} onClearNotification={() => {}} users={users} onBackToOverview={() => handleSetActivePage('AI data cloud overview')} accounts={accounts} onNavigateToWarehouse={handleNavigateToWarehouse} onNavigateToQuery={() => {}} onMarkNotificationAsRead={() => {}} onOpenAssignedQueryPreview={() => {}} />;
         default: return <Overview onSelectAccount={handleSelectAccount} onSelectUser={setSelectedUser} accounts={accounts} users={users} onSetBigScreenWidget={setBigScreenWidget} currentUser={currentUser} onNavigate={handleSetActivePage} onAddAccountClick={() => setSidePanel({ type: 'addAccount' })} />;
     }
   };
@@ -388,10 +389,10 @@ const App: React.FC = () => {
       {loading && <SplashScreen />}
       <Header 
         onMenuClick={() => setSidebarOpen(!isSidebarOpen)}
-        onLogoClick={() => handleSetActivePage('Data Cloud Overview')}
+        onLogoClick={() => handleSetActivePage('AI data cloud overview')}
         isSidebarOpen={isSidebarOpen}
         brandLogo={null}
-        onOpenProfileSettings={() => handleSetActivePage('Profile Settings')}
+        onOpenProfileSettings={() => handleSetActivePage('Profile settings')}
         onLogout={handleLogout}
         notifications={notifications}
         onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
@@ -438,7 +439,7 @@ const App: React.FC = () => {
             </div>
         )}
       </div>
-      <AIQuickAskPanel isOpen={isQuickAskOpen} onClose={() => setIsQuickAskOpen(false)} onOpenAgent={() => { setIsQuickAskOpen(false); handleSetActivePage('AI Agent'); }} />
+      <AIQuickAskPanel isOpen={isQuickAskOpen} onClose={() => setIsQuickAskOpen(false)} onOpenAgent={() => { setIsQuickAskOpen(false); handleSetActivePage('AI agent'); }} />
       {sidePanel && (
         <SidePanel isOpen={!!sidePanel} onClose={() => setSidePanel(null)} isFullScreen={sidePanel.type === 'addAccount'} title={sidePanel.type === 'assignQuery' ? 'Assign Optimization Task' : sidePanel.type === 'queryPreview' ? 'Query Preview' : 'Panel'}>
           {sidePanel.type === 'addAccount' && <AddAccountFlow onCancel={() => setSidePanel(null)} onAddAccount={() => {setAccounts(connectionsData); setSidePanel(null);}} />}
